@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#9B7BB8">
+<title>Nim Thaï — Cartes</title>
+<link rel="manifest" href="manifest.json">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&family=Raleway:wght@300;400;600&display=swap" rel="stylesheet">
+<script>
+// Service Worker: auto-update transparent
+if('serviceWorker' in navigator){
+  navigator.serviceWorker.register('sw.js', {scope: '.'}).then(reg=>{
+    // Check for updates every 30 min while app is open
+    setInterval(()=>reg.update(),30*60*1000);
+    reg.addEventListener('updatefound',()=>{
+      const nw=reg.installing;
+      nw.addEventListener('statechange',()=>{
+        // New version ready + old SW was active = update available
+        if(nw.state==='activated'&&navigator.serviceWorker.controller){
+          // Silent reload to apply update
+          window.location.reload();
+        }
+      });
+    });
+  });
+  // Also reload when new SW takes control
+  let refreshing=false;
+  navigator.serviceWorker.addEventListener('controllerchange',()=>{
+    if(!refreshing){refreshing=true;window.location.reload()}
+  });
+}
+</script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Raleway',sans-serif;min-height:100vh;min-height:100dvh;
+  background:linear-gradient(135deg,#8668A4 0%,#9B7BB8 50%,#B89FCC 100%);
+  color:#fff;-webkit-tap-highlight-color:transparent;
+  padding-top:env(safe-area-inset-top);padding-bottom:env(safe-area-inset-bottom)}
+input,select,button{font-family:inherit}
+.serif{font-family:'Cormorant Garamond',serif}
+.gold{color:#D4AF37}.red{color:#C0392B}.cream{color:#FFF8E7}.creamd{color:#F0E6D0}
+.magenta{color:#B6007D}
+</style>
+</head>
+<body>
+<div id="app"></div>
+
+<script type="module">
+import{h,render}from'https://esm.sh/preact@10.24.3';
+import{useState,useEffect,useRef}from'https://esm.sh/preact@10.24.3/hooks';
+import htm from'https://esm.sh/htm@3.1.1';
+const html=htm.bind(h);
+
+// ─── CONFIG ───
+const C={mauve:'#9B7BB8',mauveDark:'#8668A4',mauveLight:'#B89FCC',gold:'#D4AF37',goldDark:'#C9A63D',
+  red:'#C0392B',white:'#FFFFFF',cream:'#FFF8E7',creamDark:'#F0E6D0',magenta:'#B6007D'};
+const API_KEY='nim2026secret';
+const SOINS=["Massage thaï traditionnel — 60 min","Massage thaï traditionnel — 90 min",
+  "Réflexologie plantaire — 60 min","Massage dos — 30 min","Massage pieds — 30 min",
+  "Rituel Sérénité","Rituel Évasion","Rituel Harmonie",
+  "Carnet Découverte (3 séances)","Carnet Fidèle (5 séances)","Pass Signature (10 séances)","Pass Duo Sérénité"];
+
+const genId=p=>`${p}-${Math.random().toString(36).substring(2,6).toUpperCase()}`;
+const addMonths=(d,n)=>{const x=new Date(d);x.setMonth(x.getMonth()+n);return x.toISOString().slice(0,10)};
+const fmtDate=d=>d?d.split('-').reverse().join(' / '):'';
+const phoneClean=p=>(p||'').replace(/[\s.\-]/g,'');
+
+// ─── STORAGE: localStorage + Netlify Blobs sync ───
+const LS_KEY='nim-items-v3';
+function lsLoad(){try{return JSON.parse(localStorage.getItem(LS_KEY)||'[]')}catch{return[]}}
+function lsSave(items){localStorage.setItem(LS_KEY,JSON.stringify(items))}
+
+async function cloudLoad(){
+  try{const r=await fetch('./api/data',{headers:{'x-api-key':API_KEY}});
+    if(r.ok)return await r.json()}catch{}return null}
+async function cloudSave(items){
+  try{await fetch('./api/data',{method:'POST',headers:{'Content-Type':'application/json','x-api-key':API_KEY},
+    body:JSON.stringify(items)})}catch{}}
+
+async function loadAll(){
+  const local=lsLoad();
+  const cloud=await cloudLoad();
+  if(cloud&&cloud.length>0){
+    // Merge: cloud wins for existing IDs, add local-only items
+    const cloudIds=new Set(cloud.map(c=>c.id));
+    const merged=[...cloud,...local.filter(l=>!cloudIds.has(l.id))];
+    lsSave(merged);return merged}
+  return local}
+async function saveAll(items){lsSave(items);cloudSave(items)}
+
+// ─── QR SCAN ───
+async function scanQR(file){
+  try{const bm=await createImageBitmap(file);
+    if('BarcodeDetector' in window){
+      const det=new BarcodeDetector({formats:['qr_code']});
+      const res=await det.detect(bm);if(res.length>0)return res[0].rawValue}}catch{}return null}
+
+// ─── HTML2CANVAS ───
+function loadH2C(){return new Promise((ok,no)=>{if(window.html2canvas){ok(window.html2canvas);return}
+  const s=document.createElement('script');
+  s.src='https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';
+  s.onload=()=>ok(window.html2canvas);s.onerror=no;document.head.appendChild(s)})}
+
+// ─── SMALL COMPONENTS ───
+function QR({data,size=80}){
+  const[ok,setOk]=useState(true);
+  const url=`https://api.qrserver.com/v1/create-qr-code/?size=${size*2}x${size*2}&data=${encodeURIComponent(data)}&margin=4&format=png`;
+  if(!ok)return html`<div style=${{width:size,height:size,background:'#fff',borderRadius:8,display:'flex',alignItems:'center',justifyContent:'center',fontFamily:'monospace',fontSize:12,fontWeight:700,color:'#333'}}>${data}</div>`;
+  return html`<img src=${url} alt="QR" width=${size} height=${size} crossorigin="anonymous" style=${{borderRadius:6,background:'#fff',padding:3}} onError=${()=>setOk(false)}/>`;
+}
+function Frangipani({size=42}){
+  return html`<svg viewBox="0 0 60 60" width=${size} height=${size}>
+    <g transform="translate(30,30)">
+      ${[0,72,144,216,288].map(a=>html`<ellipse cx="0" cy="-14" rx="7" ry="14" fill=${C.gold} transform="rotate(${a})" opacity="0.92"/>`)}
+      <circle r="6" fill=${C.goldDark}/><circle r="3" fill=${C.cream} opacity="0.6"/>
+    </g></svg>`}
+function Sep(){return html`<div style=${{display:'flex',alignItems:'center',gap:8,margin:'6px 0 14px'}}>
+  <div style=${{flex:1,height:1,background:C.gold+'50'}}/><div style=${{color:C.gold,fontSize:9}}>◆</div>
+  <div style=${{flex:1,height:1,background:C.gold+'50'}}/></div>`}
+
+// ═══════════════════════════════════════
+// APP
+// ═══════════════════════════════════════
+function App(){
+  const[screen,setScreen]=useState('home');
+  const[items,setItems]=useState([]);
+  const[current,setCurrent]=useState(null);
+  const[loading,setLoading]=useState(true);
+  const[sharing,setSharing]=useState(false);
+  const[search,setSearch]=useState('');
+  const[scanMsg,setScanMsg]=useState('');
+  const[clientPhone,setClientPhone]=useState('');
+  const[clientName,setClientName]=useState('');
+  const[foundClient,setFoundClient]=useState(null);
+  const[dur,setDur]=useState('1h');
+  const[cPour,setCPour]=useState('');
+  const[cDeLaPart,setCDeLaPart]=useState('');
+  const[cSoin,setCSoin]=useState(SOINS[0]);
+  const cardRef=useRef(null);
+  const scanRef=useRef(null);
+
+  useEffect(()=>{loadAll().then(d=>{setItems(d);setLoading(false)});},[]);
+
+  const save=async(arr)=>{setItems(arr);await saveAll(arr)};
+
+  const findByPhone=phone=>{const cl=phoneClean(phone);if(cl.length<4)return null;
+    const f=items.find(i=>phoneClean(i.phone)===cl||phoneClean(i.phone).endsWith(cl));
+    return f?{name:f.name,phone:f.phone}:null};
+
+  const createAbo=async()=>{
+    const item={type:'abo',id:genId('NIM'),name:clientName,phone:phoneClean(clientPhone),
+      duration:dur,visits:[false,false,false,false,false],dates:[null,null,null,null,null],
+      created:new Date().toISOString()};
+    await save([item,...items]);setCurrent(item);setScreen('view-abo')};
+
+  const createCadeau=async()=>{
+    const now=new Date().toISOString();
+    const item={type:'cadeau',id:genId('CDO'),name:clientName,phone:phoneClean(clientPhone),
+      pour:cPour,deLaPart:cDeLaPart,soin:cSoin,validUntil:addMonths(now,6),
+      created:now,used:false,usedDate:null};
+    await save([item,...items]);setCurrent(item);setScreen('view-cadeau')};
+
+  const toggleVisit=async idx=>{
+    const updated=items.map(c=>{if(c.id!==current.id)return c;
+      const v=[...c.visits],d=[...(c.dates||[null,null,null,null,null])];
+      v[idx]=!v[idx];d[idx]=v[idx]?new Date().toISOString().slice(0,10):null;
+      return{...c,visits:v,dates:d}});
+    await save(updated);setCurrent(updated.find(c=>c.id===current.id))};
+
+  const toggleUsed=async()=>{
+    const updated=items.map(c=>{if(c.id!==current.id)return c;
+      return{...c,used:!c.used,usedDate:!c.used?new Date().toISOString().slice(0,10):null}});
+    await save(updated);setCurrent(updated.find(c=>c.id===current.id))};
+
+  const deleteItem=async id=>{await save(items.filter(c=>c.id!==id));setScreen('home')};
+  const openItem=item=>{setCurrent(item);setScreen(item.type==='abo'?'view-abo':'view-cadeau')};
+
+  const shareCard=async()=>{
+    if(!cardRef.current)return;setSharing(true);
+    try{const h2c=await loadH2C();
+      const canvas=await h2c(cardRef.current,{backgroundColor:null,scale:2,useCORS:true,logging:false});
+      const blob=await new Promise(r=>canvas.toBlob(r,'image/png'));
+      const file=new File([blob],`${current.id}.png`,{type:'image/png'});
+      if(navigator.canShare&&navigator.canShare({files:[file]})){
+        await navigator.share({files:[file],title:`${current.id} — Nim Thaï`})}
+      else{const u=URL.createObjectURL(blob);const a=document.createElement('a');
+        a.href=u;a.download=file.name;a.click();URL.revokeObjectURL(u)}}
+    catch(e){if(e.name!=='AbortError')alert('Erreur: '+e.message)}setSharing(false)};
+
+  const handleScan=async e=>{
+    const file=e.target.files?.[0];if(!file)return;setScanMsg('Analyse…');
+    const result=await scanQR(file);
+    if(result){const found=items.find(c=>c.id===result);
+      if(found){setScanMsg('');
+        if(found.type==='cadeau'&&!found.used){
+          const today=new Date().toISOString().slice(0,10);
+          const upd=items.map(c=>c.id===found.id?{...c,used:true,usedDate:today}:c);
+          await save(upd);setCurrent(upd.find(c=>c.id===found.id));setScreen('view-cadeau')}
+        else{openItem(found)}e.target.value='';return}
+      setScanMsg(`"${result}" — non trouvé`)}
+    else{setScanMsg('QR non détecté')}e.target.value='';setTimeout(()=>setScanMsg(''),3500)};
+
+  const stampCount=c=>c.visits.filter(Boolean).length;
+  const isComplete=c=>c.type==='abo'&&stampCount(c)===5;
+  const isExpired=c=>c.type==='cadeau'&&c.validUntil<new Date().toISOString().slice(0,10);
+
+  const startNew=()=>{setClientPhone('');setClientName('');setFoundClient(null);
+    setDur('1h');setCPour('');setCDeLaPart('');setCSoin(SOINS[0]);setScreen('identify')};
+
+  const filtered=search?items.filter(i=>i.name?.toLowerCase().includes(search.toLowerCase())
+    ||i.id.toLowerCase().includes(search.toLowerCase())
+    ||phoneClean(i.phone).includes(phoneClean(search))
+    ||(i.pour||'').toLowerCase().includes(search.toLowerCase())):items;
+
+  // ─── SHARED STYLES ───
+  const sBtn={width:'100%',padding:'14px',borderRadius:12,border:'none',
+    background:`linear-gradient(135deg,${C.gold},${C.goldDark})`,color:'#1a0a2e',
+    fontSize:15,fontWeight:600,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',gap:8};
+  const sInput={width:'100%',padding:'12px 14px',borderRadius:10,border:`2px solid ${C.gold}50`,
+    background:C.white+'10',color:C.white,fontSize:17,outline:'none',boxSizing:'border-box',textAlign:'center'};
+  const sCard={borderRadius:18,border:`3px solid ${C.gold}`,padding:'18px 18px 20px'};
+
+  // ═══ HOME ═══
+  if(screen==='home'){return html`<div>
+    <div style=${{padding:'28px 20px 12px',textAlign:'center'}}>
+      <div class="serif" style=${{fontSize:28,fontWeight:600,color:C.gold}}>Nim Thaï</div>
+      <div style=${{fontSize:10,letterSpacing:4,textTransform:'uppercase',color:C.creamDark,marginTop:2}}>Gestion clients</div></div>
+    <div style=${{padding:'0 20px 10px'}}>
+      <input value=${search} onInput=${e=>setSearch(e.target.value)} placeholder="Nom, téléphone ou ID…"
+        style=${{...sInput,fontSize:14,border:`1px solid ${C.gold}30`}}/></div>
+    <div style=${{padding:'0 20px 14px',display:'flex',gap:10}}>
+      <button onClick=${startNew} style=${{...sBtn,flex:1}}>+ Nouveau</button>
+      <button onClick=${()=>scanRef.current?.click()}
+        style=${{padding:'14px 18px',borderRadius:12,background:C.white+'15',border:`1px solid ${C.gold}50`,color:C.gold,fontSize:20,cursor:'pointer'}}>📷</button>
+      <input ref=${scanRef} type="file" accept="image/*" capture="environment" onChange=${handleScan} style=${{display:'none'}}/></div>
+    ${scanMsg&&html`<div style=${{padding:'0 20px 10px'}}><div style=${{padding:10,borderRadius:10,background:C.white+'12',fontSize:13,color:C.cream,textAlign:'center'}}>${scanMsg}</div></div>`}
+    ${loading?html`<div style=${{textAlign:'center',padding:40,color:C.creamDark}}>Chargement…</div>`:html`<div style=${{padding:'0 20px'}}>
+      ${filtered.length===0&&html`<div style=${{textAlign:'center',padding:30,color:C.creamDark,fontSize:14}}>${search?'Aucun résultat':'Aucun client'}</div>`}
+      ${filtered.map(item=>html`<div key=${item.id} onClick=${()=>openItem(item)}
+        style=${{background:C.white+'10',borderRadius:14,padding:'12px 14px',marginBottom:8,cursor:'pointer',
+          border:`1px solid ${C.gold}25`,opacity:(item.used||isComplete(item))?0.55:1,
+          display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+        <div style=${{minWidth:0}}>
+          <div style=${{fontSize:15,fontWeight:600,display:'flex',alignItems:'center',gap:8}}>
+            <span style=${{fontSize:11,padding:'2px 7px',borderRadius:6,
+              background:item.type==='abo'?C.gold+'30':C.magenta+'30',
+              color:item.type==='abo'?C.gold:C.magenta}}>${item.type==='abo'?'ABO':'CADEAU'}</span>
+            ${item.type==='cadeau'?item.pour:item.name}</div>
+          <div style=${{fontSize:11,color:C.creamDark,marginTop:3}}>
+            ${item.id} · ${item.phone} · ${item.type==='abo'?item.duration:item.soin}</div></div>
+        ${item.type==='abo'?html`<div style=${{display:'flex',gap:3,flexShrink:0}}>
+          ${item.visits.map((v,i)=>html`<div style=${{width:12,height:12,borderRadius:'50%',border:`2px solid ${C.gold}`,background:v?C.gold:'transparent'}}/>`)}</div>`
+        :html`<div style=${{fontSize:11,flexShrink:0,fontWeight:600,
+          color:item.used?'#4CAF50':isExpired(item)?C.red:C.creamDark}}>
+          ${item.used?'✓ Utilisé':isExpired(item)?'Expiré':'→ '+fmtDate(item.validUntil)}</div>`}
+      </div>`)}
+    </div>`}
+    <div style=${{height:40}}/></div>`}
+
+  // ═══ IDENTIFY ═══
+  if(screen==='identify'){
+    const handlePhone=val=>{setClientPhone(val);const f=findByPhone(val);setFoundClient(f);if(f)setClientName(f.name)};
+    const ok=phoneClean(clientPhone).length>=6&&clientName.trim().length>=2;
+    return html`<div>
+      <div style=${{padding:'20px 20px 0'}}><button onClick=${()=>setScreen('home')} style=${{background:'none',border:'none',color:C.gold,fontSize:14,cursor:'pointer'}}>← Retour</button></div>
+      <div style=${{padding:'0 24px',textAlign:'center'}}>
+        <div class="serif" style=${{fontSize:24,color:C.gold,fontWeight:600,marginBottom:24}}>Identification client</div>
+        <div style=${{marginBottom:18}}><label style=${{fontSize:11,letterSpacing:2,textTransform:'uppercase',color:C.creamDark,display:'block',marginBottom:6}}>Téléphone</label>
+          <input value=${clientPhone} onInput=${e=>handlePhone(e.target.value)} placeholder="06 12 34 56 78" type="tel" autofocus
+            style=${{...sInput,letterSpacing:2}}/></div>
+        ${foundClient&&html`<div style=${{padding:'10px 14px',borderRadius:10,background:C.gold+'15',border:`1px solid ${C.gold}30`,marginBottom:16,fontSize:14,color:C.gold}}>
+          Client existant : <strong>${foundClient.name}</strong></div>`}
+        ${!foundClient&&phoneClean(clientPhone).length>=6&&html`<div style=${{marginBottom:18}}>
+          <label style=${{fontSize:11,letterSpacing:2,textTransform:'uppercase',color:C.creamDark,display:'block',marginBottom:6}}>Nom (nouveau client)</label>
+          <input value=${clientName} onInput=${e=>setClientName(e.target.value)} placeholder="Marie Dupont"
+            style=${{...sInput,fontFamily:"'Cormorant Garamond',serif"}}/></div>`}
+        <button onClick=${()=>setScreen('choose')} disabled=${!ok}
+          style=${{...sBtn,background:ok?`linear-gradient(135deg,${C.gold},${C.goldDark})`:C.gold+'30',color:ok?'#1a0a2e':C.creamDark,cursor:ok?'pointer':'default'}}>Continuer →</button>
+      </div></div>`}
+
+  // ═══ CHOOSE ═══
+  if(screen==='choose'){return html`<div>
+    <div style=${{padding:'20px 20px 0'}}><button onClick=${()=>setScreen('identify')} style=${{background:'none',border:'none',color:C.gold,fontSize:14,cursor:'pointer'}}>← Retour</button></div>
+    <div style=${{padding:'0 24px',textAlign:'center'}}>
+      <div style=${{fontSize:13,color:C.creamDark,marginBottom:6}}>${clientName} · ${clientPhone}</div>
+      <div class="serif" style=${{fontSize:24,color:C.gold,fontWeight:600,marginBottom:28}}>Quel support ?</div>
+      <button onClick=${()=>setScreen('create-abo')}
+        style=${{width:'100%',padding:'24px 16px',borderRadius:16,marginBottom:14,background:C.white+'10',border:`2px solid ${C.gold}50`,cursor:'pointer',textAlign:'center',color:C.white}}>
+        <div style=${{fontSize:28,marginBottom:6}}>🪷</div>
+        <div class="serif" style=${{fontSize:20,fontWeight:600,color:C.gold}}>Carte d'abonnement</div>
+        <div style=${{fontSize:12,color:C.creamDark,marginTop:4}}>5 passages · fidélité</div></button>
+      <button onClick=${()=>{setCPour(clientName);setScreen('create-cadeau')}}
+        style=${{width:'100%',padding:'24px 16px',borderRadius:16,background:C.white+'10',border:`2px solid ${C.magenta}50`,cursor:'pointer',textAlign:'center',color:C.white}}>
+        <div style=${{fontSize:28,marginBottom:6}}>🎁</div>
+        <div class="serif" style=${{fontSize:20,fontWeight:600,color:C.magenta}}>Chèque cadeau</div>
+        <div style=${{fontSize:12,color:C.creamDark,marginTop:4}}>Offrir un soin · valable 6 mois</div></button>
+    </div></div>`}
+
+  // ═══ CREATE ABO ═══
+  if(screen==='create-abo'){return html`<div>
+    <div style=${{padding:'20px 20px 0'}}><button onClick=${()=>setScreen('choose')} style=${{background:'none',border:'none',color:C.gold,fontSize:14,cursor:'pointer'}}>← Retour</button></div>
+    <div style=${{padding:'0 24px',textAlign:'center'}}>
+      <div style=${{fontSize:13,color:C.creamDark,marginBottom:6}}>${clientName}</div>
+      <div class="serif" style=${{fontSize:24,color:C.gold,fontWeight:600,marginBottom:24}}>Carte d'abonnement</div>
+      <div style=${{fontSize:12,letterSpacing:2,textTransform:'uppercase',color:C.creamDark,marginBottom:12}}>Durée choisie</div>
+      <div style=${{display:'flex',gap:12,justifyContent:'center',marginBottom:28}}>
+        ${['1h','1h30'].map(d=>html`<button onClick=${()=>setDur(d)}
+          style=${{flex:1,maxWidth:130,padding:'16px 0',borderRadius:12,border:`2px solid ${C.gold}`,cursor:'pointer',
+            fontSize:22,fontWeight:600,fontFamily:"'Cormorant Garamond',serif",
+            background:dur===d?C.gold:'transparent',color:dur===d?'#1a0a2e':C.gold}}>${d}</button>`)}</div>
+      <button onClick=${createAbo} style=${sBtn}>Créer la carte</button>
+    </div></div>`}
+
+  // ═══ CREATE CADEAU ═══
+  if(screen==='create-cadeau'){const vd=addMonths(new Date().toISOString(),6);return html`<div>
+    <div style=${{padding:'20px 20px 0'}}><button onClick=${()=>setScreen('choose')} style=${{background:'none',border:'none',color:C.gold,fontSize:14,cursor:'pointer'}}>← Retour</button></div>
+    <div style=${{padding:'0 24px'}}>
+      <div style=${{textAlign:'center'}}><div class="serif" style=${{fontSize:24,color:C.magenta,fontWeight:600,marginBottom:20}}>Chèque cadeau</div></div>
+      ${[{l:'Pour',v:cPour,s:setCPour,p:'Mme Dupont'},{l:'De la part de',v:cDeLaPart,s:setCDeLaPart,p:'Sa famille, ses amies…'}].map(f=>html`
+        <div style=${{marginBottom:18}}><label style=${{fontSize:11,letterSpacing:2,textTransform:'uppercase',color:C.creamDark,display:'block',marginBottom:6}}>${f.l}</label>
+          <input value=${f.v} onInput=${e=>f.s(e.target.value)} placeholder=${f.p} style=${{...sInput,fontFamily:"'Cormorant Garamond',serif"}}/></div>`)}
+      <div style=${{marginBottom:18}}><label style=${{fontSize:11,letterSpacing:2,textTransform:'uppercase',color:C.creamDark,display:'block',marginBottom:6}}>Soin offert</label>
+        <select value=${cSoin} onChange=${e=>setCSoin(e.target.value)}
+          style=${{...sInput,border:`2px solid ${C.magenta}50`,fontSize:15,fontFamily:"'Cormorant Garamond',serif",WebkitAppearance:'none'}}>
+          ${SOINS.map(s=>html`<option value=${s} style=${{background:C.mauveDark,color:C.white}}>${s}</option>`)}</select></div>
+      <div style=${{padding:'12px 14px',borderRadius:10,background:C.white+'08',marginBottom:20,textAlign:'center'}}>
+        <span style=${{fontSize:11,letterSpacing:2,textTransform:'uppercase',color:C.creamDark}}>Valable jusqu'au </span>
+        <span class="serif" style=${{fontSize:18,fontWeight:600,color:C.gold}}>${fmtDate(vd)}</span></div>
+      <button onClick=${createCadeau} disabled=${!cPour.trim()||!cDeLaPart.trim()}
+        style=${{...sBtn,background:cPour.trim()&&cDeLaPart.trim()?`linear-gradient(135deg,${C.magenta},${C.red})`:C.gold+'30',
+          color:cPour.trim()&&cDeLaPart.trim()?C.white:C.creamDark}}>Créer le chèque cadeau</button>
+    </div></div>`}
+
+  // ═══ VIEW ABO ═══
+  if(screen==='view-abo'&&current){const alt=current.duration==='1h'?'1h30':'1h';const complete=isComplete(current);
+    return html`<div>
+      <div style=${{padding:'14px 20px 6px',display:'flex',justifyContent:'space-between'}}>
+        <button onClick=${()=>setScreen('home')} style=${{background:'none',border:'none',color:C.gold,fontSize:14,cursor:'pointer'}}>← Accueil</button>
+        <button onClick=${()=>{if(confirm('Supprimer ?'))deleteItem(current.id)}} style=${{background:'none',border:'none',color:C.red+'80',fontSize:11,cursor:'pointer'}}>Supprimer</button></div>
+      <div style=${{padding:'0 14px 16px'}}>
+        <div ref=${cardRef} style=${{...sCard,background:C.mauve,boxShadow:`inset 0 0 0 5px ${C.mauve},inset 0 0 0 7px ${C.gold}35`}}>
+          <div style=${{textAlign:'center',marginBottom:12}}>
+            <div class="serif" style=${{fontSize:28,fontWeight:600,color:C.red,fontStyle:'italic'}}>Nim Thaï</div>
+            <div style=${{fontSize:9,letterSpacing:5,textTransform:'uppercase',color:C.red}}>bien-être</div>
+            <div style=${{marginTop:8,fontSize:10,letterSpacing:3,textTransform:'uppercase',color:C.cream}}>Carte d'abonnement</div></div>
+          <${Sep}/>
+          <div style=${{display:'flex',justifyContent:'center',gap:9,marginBottom:10}}>
+            ${current.visits.map((v,i)=>html`<div onClick=${()=>toggleVisit(i)}
+              style=${{width:48,height:48,borderRadius:'50%',border:`2.5px solid ${C.gold}`,
+                background:v?C.gold+'18':C.white+'10',display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer'}}>
+              ${v?html`<${Frangipani} size=${40}/>`:html`<span class="serif" style=${{fontSize:17,color:C.gold+'60',fontWeight:600}}>${i+1}</span>`}</div>`)}</div>
+          <div style=${{display:'flex',justifyContent:'center',gap:9,marginBottom:14}}>
+            ${(current.dates||[]).map(d=>html`<div style=${{width:48,textAlign:'center',fontSize:8,color:C.creamDark}}>${d?d.slice(5).replace('-','/'):''}</div>`)}</div>
+          <div style=${{display:'flex',justifyContent:'center',alignItems:'center',gap:14,marginBottom:14}}>
+            <span class="serif" style=${{fontSize:14,color:C.creamDark}}>Durée :</span>
+            <span class="serif" style=${{fontSize:20,fontWeight:600,color:C.gold}}>${current.duration}</span>
+            <span class="serif" style=${{fontSize:14,color:C.creamDark+'50',textDecoration:'line-through',textDecorationColor:C.red+'80'}}>${alt}</span></div>
+          <div style=${{textAlign:'center',marginBottom:12}}>
+            <div class="serif" style=${{fontSize:14,fontWeight:600,color:C.cream}}>Massage traditionnel thaïlandais</div>
+            <div class="serif" style=${{fontSize:11,fontStyle:'italic',color:C.creamDark,lineHeight:1.5}}>Libération des tensions · Détente profonde · Soins & bien-être</div></div>
+          <${Sep}/>
+          <div style=${{textAlign:'center',background:C.cream+'12',borderRadius:10,padding:'8px 14px',marginBottom:12}}>
+            <div class="serif" style=${{fontSize:11,color:C.creamDark,fontStyle:'italic'}}>Nom</div>
+            <div class="serif" style=${{fontSize:20,fontWeight:600,color:C.cream}}>${current.name}</div>
+            ${current.phone&&html`<div style=${{fontSize:12,color:C.creamDark,marginTop:2,letterSpacing:1}}>${current.phone}</div>`}</div>
+          <div style=${{display:'flex',alignItems:'center',justifyContent:'space-between'}}>
+            <${QR} data=${current.id}/>
+            <div style=${{textAlign:'right'}}>
+              <div style=${{fontFamily:'monospace',fontSize:12,color:C.gold,fontWeight:700,letterSpacing:1,marginBottom:4}}>${current.id}</div>
+              <div class="serif" style=${{fontSize:17,fontWeight:600,color:C.gold}}>07 61 11 66 65</div>
+              <div style=${{fontSize:9,color:C.creamDark,marginTop:2}}>17 rue des Bosquets · Lunéville</div></div></div>
+          ${complete&&html`<div style=${{textAlign:'center',marginTop:14,padding:10,background:C.gold+'20',borderRadius:10,border:`1px solid ${C.gold}35`}}>
+            <div class="serif" style=${{fontSize:15,fontWeight:600,color:C.gold}}>✦ Carte complète — 1 séance offerte ✦</div></div>`}
+        </div></div>
+      <div style=${{padding:'0 18px 8px',textAlign:'center',fontSize:12,color:C.creamDark}}>${stampCount(current)}/5 passages</div>
+      <div style=${{padding:'0 18px 20px'}}>
+        <button onClick=${shareCard} disabled=${sharing} style=${{...sBtn,background:sharing?C.gold+'50':sBtn.background}}>
+          ${sharing?'⏳ Préparation…':'📤 Partager la carte'}</button></div>
+    </div>`}
+
+  // ═══ VIEW CADEAU ═══
+  if(screen==='view-cadeau'&&current){const expired=isExpired(current);
+    return html`<div>
+      <div style=${{padding:'14px 20px 6px',display:'flex',justifyContent:'space-between'}}>
+        <button onClick=${()=>setScreen('home')} style=${{background:'none',border:'none',color:C.gold,fontSize:14,cursor:'pointer'}}>← Accueil</button>
+        <button onClick=${()=>{if(confirm('Supprimer ?'))deleteItem(current.id)}} style=${{background:'none',border:'none',color:C.red+'80',fontSize:11,cursor:'pointer'}}>Supprimer</button></div>
+      <div style=${{padding:'0 14px 16px'}}>
+        <div ref=${cardRef} style=${{...sCard,background:C.mauveLight,boxShadow:`inset 0 0 0 5px ${C.mauveLight},inset 0 0 0 7px ${C.gold}35`}}>
+          <div style=${{textAlign:'center',marginBottom:6}}>
+            <div class="serif" style=${{fontSize:26,fontWeight:600,color:C.red,fontStyle:'italic'}}>Nim Thaï</div>
+            <div style=${{fontSize:9,letterSpacing:5,textTransform:'uppercase',color:C.red}}>bien-être</div></div>
+          <div style=${{textAlign:'center',marginBottom:14}}>
+            <div class="serif" style=${{fontSize:32,fontWeight:600,color:C.mauveDark,fontStyle:'italic'}}>Chèque cadeau</div></div>
+          ${[{l:'POUR',v:current.pour},{l:'DE LA PART DE',v:current.deLaPart},{l:'VALEUR',v:current.soin},{l:"JUSQU'AU",v:fmtDate(current.validUntil)}].map(f=>
+            html`<div style=${{marginBottom:10,borderBottom:`1px dashed ${C.gold}60`,paddingBottom:8}}>
+              <span style=${{fontSize:10,letterSpacing:3,color:C.mauveDark,fontWeight:600}}>${f.l} : </span>
+              <span class="serif" style=${{fontSize:19,fontWeight:600,color:C.red,fontStyle:'italic'}}>${f.v}</span></div>`)}
+          <${Sep}/>
+          <div style=${{textAlign:'center',marginBottom:12}}>
+            <div class="serif" style=${{fontSize:13,fontWeight:600,color:C.mauveDark}}>Massage traditionnel thaïlandais</div>
+            <div class="serif" style=${{fontSize:11,fontStyle:'italic',color:C.mauveDark+'90',lineHeight:1.5}}>Libération des tensions · Détente profonde · Soins & bien-être</div></div>
+          <div style=${{display:'flex',alignItems:'center',justifyContent:'space-between'}}>
+            <${QR} data=${current.id}/>
+            <div style=${{textAlign:'right'}}>
+              <div style=${{fontFamily:'monospace',fontSize:12,color:C.goldDark,fontWeight:700,letterSpacing:1,marginBottom:4}}>${current.id}</div>
+              <div class="serif" style=${{fontSize:16,fontWeight:600,color:C.gold}}>07 61 11 66 65</div>
+              <div style=${{fontSize:9,color:C.mauveDark,marginTop:2}}>17 rue des Bosquets · Lunéville</div></div></div>
+          ${current.used&&html`<div style=${{position:'relative',marginTop:16}}>
+            <div style=${{border:'3px solid #2E7D32',borderRadius:12,padding:'14px 16px',background:'#E8F5E920',position:'relative',overflow:'hidden'}}>
+              <div style=${{textAlign:'center'}}>
+                <div style=${{fontSize:12,letterSpacing:3,textTransform:'uppercase',color:'#2E7D32',fontWeight:600,marginBottom:4}}>✓ SOIN RÉALISÉ</div>
+                <div class="serif" style=${{fontSize:22,fontWeight:600,color:'#2E7D32'}}>le ${fmtDate(current.usedDate)}</div></div>
+              <div style=${{position:'absolute',top:4,left:6,fontSize:10,color:'#2E7D3260'}}>✦</div>
+              <div style=${{position:'absolute',top:4,right:6,fontSize:10,color:'#2E7D3260'}}>✦</div>
+              <div style=${{position:'absolute',bottom:4,left:6,fontSize:10,color:'#2E7D3260'}}>✦</div>
+              <div style=${{position:'absolute',bottom:4,right:6,fontSize:10,color:'#2E7D3260'}}>✦</div></div></div>`}
+          ${expired&&!current.used&&html`<div style=${{textAlign:'center',marginTop:14,padding:12,background:C.red+'12',borderRadius:10,border:`2px solid ${C.red}40`}}>
+            <div style=${{fontSize:11,letterSpacing:3,textTransform:'uppercase',color:C.red,fontWeight:600}}>EXPIRÉ</div></div>`}
+        </div></div>
+      <div style=${{padding:'0 18px 6px',textAlign:'center'}}>
+        ${current.used&&html`<div style=${{fontSize:13,color:'#4CAF50',fontWeight:600,marginBottom:8}}>
+          Soin réalisé le ${fmtDate(current.usedDate)} — repartager au client ↓</div>`}</div>
+      <div style=${{padding:'0 18px 10px',display:'flex',gap:10}}>
+        <button onClick=${shareCard} disabled=${sharing} style=${{...sBtn,flex:1}}>
+          ${sharing?'⏳':current.used?'📤 Renvoyer au client':'📤 Partager'}</button>
+        ${!current.used&&html`<button onClick=${toggleUsed}
+          style=${{padding:'14px 18px',borderRadius:12,cursor:'pointer',fontSize:13,fontWeight:600,border:'none',background:C.gold+'25',color:C.gold}}>Valider soin</button>`}
+      </div></div>`}
+
+  return html`<div/>`;
+}
+
+render(html`<${App}/>`,document.getElementById('app'));
+</script>
+</body>
+</html>
