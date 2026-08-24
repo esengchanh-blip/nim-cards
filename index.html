@@ -142,6 +142,7 @@ function App(){
   const[cSoin,setCSoin]=useState(SOINS[0]);
   const cardRef=useRef(null);
   const scanRef=useRef(null);
+  const importRef=useRef(null);
 
   useEffect(()=>{loadAll().then(d=>{setItems(d);setLoading(false)});},[]);
 
@@ -258,6 +259,24 @@ function App(){
           color:item.used?'#4CAF50':isExpired(item)?C.red:C.creamDark}}>
           ${item.used?'✓ Utilisé':isExpired(item)?'Expiré':'→ '+fmtDate(item.validUntil)}</div>`}
       </div>`)}
+    </div>`}
+    ${items.length>0&&html`<div style=${{padding:'16px 20px 0',display:'flex',gap:8}}>
+      <button onClick=${()=>{
+        const blob=new Blob([JSON.stringify(items,null,2)],{type:'application/json'});
+        const url=URL.createObjectURL(blob);const a=document.createElement('a');
+        a.href=url;a.download='nim-cards-backup-'+new Date().toISOString().slice(0,10)+'.json';
+        a.click();URL.revokeObjectURL(url);
+      }} style=${{flex:1,padding:'10px',borderRadius:10,background:C.white+'10',border:`1px solid ${C.gold}25`,
+        color:C.creamDark,fontSize:12,cursor:'pointer'}}>💾 Exporter (${items.length})</button>
+      <button onClick=${()=>importRef.current?.click()}
+        style=${{flex:1,padding:'10px',borderRadius:10,background:C.white+'10',border:`1px solid ${C.gold}25`,
+        color:C.creamDark,fontSize:12,cursor:'pointer'}}>📂 Importer</button>
+      <input ref=${importRef} type="file" accept=".json" onChange=${async e=>{
+        const f=e.target.files?.[0];if(!f)return;
+        try{const txt=await f.text();const data=JSON.parse(txt);
+          if(Array.isArray(data)){await save(data);alert('✅ '+data.length+' cartes restaurées')}
+          else{alert('Fichier invalide')}}catch{alert('Erreur de lecture')}
+        e.target.value=''}} style=${{display:'none'}}/>
     </div>`}
     <div style=${{height:40}}/></div>`}
 
