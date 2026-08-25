@@ -78,7 +78,7 @@ function App(){
   const fil=search?items.filter(i=>(i.name||'').toLowerCase().includes(search.toLowerCase())||i.id.toLowerCase().includes(search.toLowerCase())||pClean(i.phone).includes(pClean(search))||(i.pour||'').toLowerCase().includes(search.toLowerCase())):items;
 
   const btn={width:'100%',padding:'14px',borderRadius:12,border:'none',background:'linear-gradient(135deg,'+C.gold+','+C.goldDark+')',color:'#1a0a2e',fontSize:15,fontWeight:600,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',gap:8};
-  const inp={width:'100%',padding:'12px 14px',borderRadius:10,border:'2px solid '+C.gold+'50',background:C.white+'10',color:C.white,fontSize:17,outline:'none',boxSizing:'border-box',textAlign:'center'};
+  const inp={width:'100%',padding:'12px 14px',borderRadius:10,border:'2px solid '+C.gold+'50',background:'rgba(255,255,255,0.85)',color:'#333',fontSize:17,outline:'none',boxSizing:'border-box',textAlign:'center'};
   const nav=html`<div style=${{padding:'10px 16px 6px',display:'flex',justifyContent:'space-between'}}><button onClick=${()=>setSc('home')} style=${{background:'rgba(0,0,0,0.35)',border:'none',color:'#fff',fontSize:13,cursor:'pointer',padding:'7px 16px',borderRadius:8,fontWeight:600}}>← Accueil</button><button onClick=${()=>{if(confirm('Supprimer ?'))del(cur.id)}} style=${{background:'rgba(192,57,43,0.35)',border:'none',color:'#fdd',fontSize:12,cursor:'pointer',padding:'7px 14px',borderRadius:8}}>Supprimer</button></div>`;
 
   // ═══ HOME ═══
@@ -129,7 +129,7 @@ function App(){
   // ═══════════════════════════════════════
   if(sc==='v-abo'&&cur){const co=isCo(cur);
     return html`<div>${nav}
-    <div style=${{padding:'0 8px 12px',maxWidth:520,margin:'0 auto'}}>
+    <div style=${{padding:'0 8px 12px',maxWidth:600,margin:'0 auto'}}>
       <div ref=${cr} style=${{position:'relative',borderRadius:10,overflow:'hidden',boxShadow:'0 4px 20px rgba(0,0,0,0.35)',background:'#B89FCC',aspectRatio:'1200/733'}}>
         <!-- Waves SVG gauche -->
         <svg viewBox="0 0 80 500" preserveAspectRatio="none" style=${{position:'absolute',left:0,top:0,bottom:0,width:'7%',height:'100%',zIndex:1}}>
@@ -183,15 +183,15 @@ function App(){
             <div style=${{textAlign:'right'}}><div style=${{fontFamily:'monospace',fontSize:'clamp(7px,1.3vw,11px)',color:C.gold}}>${cur.id}</div><div style=${{fontSize:'clamp(7px,1.2vw,10px)',color:C.creamDark}}>07 61 11 66 65</div></div></div>
         </div>
         ${co?html`<div style=${{position:'absolute',top:'40%',left:'55%',transform:'rotate(-15deg)',padding:'1.5% 4%',border:'3px solid '+C.gold,borderRadius:10,background:'rgba(212,175,55,0.92)',fontFamily:"'Cormorant Garamond',serif",fontSize:'clamp(11px,2.5vw,18px)',fontWeight:700,color:'#1a0a2e',whiteSpace:'nowrap',zIndex:5}}>✦ 1 SÉANCE OFFERTE ✦</div>`:''}</div></div>
-    <div style=${{padding:'6px 18px 8px',textAlign:'center',fontSize:12,color:C.creamDark,maxWidth:520,margin:'0 auto'}}>${sC(cur)}/5 · ${cur.duration} · ${cur.id}</div>
-    <div style=${{padding:'0 18px 20px',maxWidth:520,margin:'0 auto'}}><button onClick=${share} disabled=${sh} style=${{...btn,background:sh?C.gold+'50':btn.background}}>${sh?'⏳':'📤 Partager la carte'}</button></div></div>`}
+    <div style=${{padding:'6px 18px 8px',textAlign:'center',fontSize:12,color:C.creamDark,maxWidth:600,margin:'0 auto'}}>${sC(cur)}/5 · ${cur.duration} · ${cur.id}</div>
+    <div style=${{padding:'0 18px 20px',maxWidth:600,margin:'0 auto'}}><button onClick=${share} disabled=${sh} style=${{...btn,background:sh?C.gold+'50':btn.background}}>${sh?'⏳':'📤 Partager la carte'}</button></div></div>`}
 
   // ═══════════════════════════════════════
   // CHÈQUE CADEAU — design fidèle
   // ═══════════════════════════════════════
   if(sc==='v-cad'&&cur){const ex=isEx(cur);
     return html`<div>${nav}
-    <div style=${{padding:'0 8px 12px',maxWidth:520,margin:'0 auto'}}>
+    <div style=${{padding:'0 8px 12px',maxWidth:600,margin:'0 auto'}}>
       <div ref=${cr} style=${{position:'relative',borderRadius:10,overflow:'hidden',boxShadow:'0 4px 20px rgba(0,0,0,0.35)',background:'#C5AED6',border:'3px solid '+C.gold,aspectRatio:'1200/556'}}>
         <!-- Bordure intérieure or -->
         <div style=${{position:'absolute',inset:'2%',border:'1px solid '+C.gold+'60',borderRadius:6,pointerEvents:'none',zIndex:3}}></div>
@@ -207,7 +207,7 @@ function App(){
           <div class="ds" style=${{fontSize:'clamp(18px,5vw,38px)',color:C.mauveDark,marginBottom:'2%'}}>Chèque cadeau</div>
           ${[{l:'POUR',v:cur.pour},{l:'DE LA PART DE',v:cur.deLaPart},{l:'VALEUR',v:cur.soin},{l:"JUSQU'AU",v:fmtD(cur.validUntil)}].map(f=>html`<div style=${{borderBottom:'1px dashed '+C.gold+'50',padding:'1.5% 0',marginBottom:'1%'}}>
             <span style=${{fontSize:'clamp(7px,1.3vw,11px)',letterSpacing:2,color:C.mauveDark,fontWeight:600}}>${f.l} : </span>
-            <span class="cg" style=${{fontSize:'clamp(11px,2.8vw,22px)',fontWeight:600,color:C.red,fontStyle:'italic'}}>${f.v}</span></div>`)}
+            <span class="cg" style=${{fontSize:'clamp(10px,2.2vw,18px)',fontWeight:600,color:C.red,fontStyle:'italic'}}>${f.v}</span></div>`)}
           <div style=${{display:'flex',justifyContent:'space-between',alignItems:'flex-end',marginTop:'auto'}}>
             <${QR} data=${cur.id} size=${48}/>
             <div style=${{fontFamily:'monospace',fontSize:'clamp(7px,1.2vw,10px)',color:C.goldDark}}>${cur.id}</div></div>
@@ -227,8 +227,8 @@ function App(){
         ${cur.used?html`<div style=${{position:'absolute',top:'35%',left:'60%',transform:'translate(-50%,-50%) rotate(-12deg)',padding:'2% 4%',border:'4px solid #2E7D32',borderRadius:12,background:'rgba(232,245,233,0.93)',textAlign:'center',zIndex:5}}>
           <div style=${{fontSize:'clamp(9px,1.8vw,14px)',letterSpacing:3,textTransform:'uppercase',color:'#2E7D32',fontWeight:700}}>✓ SOIN RÉALISÉ</div>
           <div class="cg" style=${{fontSize:'clamp(14px,3vw,24px)',fontWeight:600,color:'#2E7D32'}}>le ${fmtD(cur.usedDate)}</div></div>`:''}</div></div>
-    <div style=${{padding:'0 18px 6px',textAlign:'center',maxWidth:520,margin:'0 auto'}}>${cur.used?html`<div style=${{fontSize:13,color:'#4CAF50',fontWeight:600,marginBottom:8}}>Soin réalisé — repartager ↓</div>`:''}</div>
-    <div style=${{padding:'0 18px 10px',display:'flex',gap:10,maxWidth:520,margin:'0 auto'}}>
+    <div style=${{padding:'0 18px 6px',textAlign:'center',maxWidth:600,margin:'0 auto'}}>${cur.used?html`<div style=${{fontSize:13,color:'#4CAF50',fontWeight:600,marginBottom:8}}>Soin réalisé — repartager ↓</div>`:''}</div>
+    <div style=${{padding:'0 18px 10px',display:'flex',gap:10,maxWidth:600,margin:'0 auto'}}>
       <button onClick=${share} disabled=${sh} style=${{...btn,flex:1}}>${sh?'⏳':cur.used?'📤 Renvoyer':'📤 Partager'}</button>
       ${!cur.used?html`<button onClick=${tU} style=${{padding:'14px 18px',borderRadius:12,cursor:'pointer',fontSize:13,fontWeight:600,border:'none',background:C.gold+'25',color:C.gold}}>Valider soin</button>`:''}</div></div>`}
 
