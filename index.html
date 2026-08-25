@@ -203,9 +203,11 @@ function App(){
   if(screen==='view-abo'&&current){const complete=isComplete(current);
     return html`<div>
       ${navBar}
-      <div style=${{padding:'0 6px 12px',maxWidth:700,margin:'0 auto'}}>
+      <div style=${{padding:'0 6px 12px',maxWidth:500,margin:'0 auto'}}>
         <div ref=${cardRef} style=${{position:'relative',borderRadius:8,overflow:'hidden',boxShadow:'0 4px 20px rgba(0,0,0,0.3)'}}>
-          <img src="bg-abo.jpg" style=${{width:'100%',display:'block'}} crossorigin="anonymous"/>
+          <img src="bg-abo.jpg" alt="" style=${{width:'100%',display:'block'}} crossorigin="anonymous"/>
+          <!-- Logo overlay -->
+          <img src="logo.png" style=${{position:"absolute",top:"2%",left:"5%",width:"25%",zIndex:2}} crossorigin="anonymous"/>
           <!-- 5 stamp overlays -->
           ${[0,1,2,3,4].map(i=>html`<div onClick=${()=>toggleVisit(i)}
             style=${{position:'absolute',top:'28%',left:(41.5+i*10.2)+'%',width:'8.5%',paddingBottom:'8.5%',
@@ -221,7 +223,7 @@ function App(){
             fontFamily:"'Cormorant Garamond',serif",fontSize:'clamp(14px,3vw,24px)',
             fontStyle:'italic',fontWeight:600,color:'#4a2866'}}>${current.name}</div>
           <!-- QR code -->
-          <div style=${{position:'absolute',bottom:'18%',left:'3%'}}><${QR} data=${current.id} size=${45}/></div>
+          <div style=${{position:'absolute',bottom:'15%',left:'3%'}}><${QR} data=${current.id} size=${65}/></div>
           <!-- ID -->
           <div style=${{position:'absolute',bottom:'3%',left:'3%',fontFamily:'monospace',fontSize:'clamp(8px,1.5vw,12px)',color:C.gold+'cc'}}>${current.id}</div>
           <!-- Complete badge -->
@@ -230,7 +232,7 @@ function App(){
             fontFamily:"'Cormorant Garamond',serif",fontSize:'clamp(12px,2.5vw,18px)',fontWeight:700,color:'#1a0a2e',
             whiteSpace:'nowrap',zIndex:5}}>✦ 1 SÉANCE OFFERTE ✦</div>`:''}</div></div>
       <div style=${{padding:'6px 18px 8px',textAlign:'center',fontSize:12,color:C.creamDark}}>${stampCount(current)}/5 · ${current.duration} · ${current.id}</div>
-      <div style=${{padding:'0 18px 20px',maxWidth:700,margin:'0 auto'}}><button onClick=${shareCard} disabled=${sharing} style=${{...sBtn,background:sharing?C.gold+'50':sBtn.background}}>${sharing?'⏳ Préparation…':'📤 Partager la carte'}</button></div>
+      <div style=${{padding:'0 18px 20px',maxWidth:500,margin:'0 auto'}}><button onClick=${shareCard} disabled=${sharing} style=${{...sBtn,background:sharing?C.gold+'50':sBtn.background}}>${sharing?'⏳ Préparation…':'📤 Partager la carte'}</button></div>
     </div>`}
 
   // ═══════════════════════════════════════
@@ -239,9 +241,11 @@ function App(){
   if(screen==='view-cadeau'&&current){const expired=isExpired(current);
     return html`<div>
       ${navBar}
-      <div style=${{padding:'0 6px 12px',maxWidth:700,margin:'0 auto'}}>
+      <div style=${{padding:'0 6px 12px',maxWidth:500,margin:'0 auto'}}>
         <div ref=${cardRef} style=${{position:'relative',borderRadius:8,overflow:'hidden',boxShadow:'0 4px 20px rgba(0,0,0,0.3)'}}>
-          <img src="bg-cadeau.jpg" style=${{width:'100%',display:'block'}} crossorigin="anonymous"/>
+          <img src="bg-cadeau.jpg" alt="" style=${{width:'100%',display:'block'}} crossorigin="anonymous"/>
+          <!-- Logo overlay -->
+          <img src="logo.png" style=${{position:"absolute",top:"2%",left:"5%",width:"25%",zIndex:2}} crossorigin="anonymous"/>
           <!-- POUR -->
           <div style=${{position:'absolute',top:'18%',left:'46%',right:'4%',
             fontFamily:"'Cormorant Garamond',serif",fontSize:'clamp(13px,3.5vw,26px)',
@@ -259,16 +263,16 @@ function App(){
             fontFamily:"'Cormorant Garamond',serif",fontSize:'clamp(13px,3.5vw,26px)',
             fontStyle:'italic',fontWeight:600,color:C.red}}>${fmtDate(current.validUntil)}</div>
           <!-- QR -->
-          <div style=${{position:'absolute',bottom:'20%',right:'3%'}}><${QR} data=${current.id} size=${38}/></div>
+          <div style=${{position:'absolute',bottom:'20%',right:'3%'}}><${QR} data=${current.id} size=${55}/></div>
           <div style=${{position:'absolute',bottom:'20%',right:'14%',fontFamily:'monospace',fontSize:'clamp(7px,1.2vw,10px)',color:C.goldDark+'cc'}}>${current.id}</div>
           <!-- SOIN REALISE stamp -->
           ${current.used?html`<div style=${{position:'absolute',top:'38%',left:'55%',transform:'translate(-50%,-50%) rotate(-12deg)',
             padding:'10px 20px',border:'4px solid #2E7D32',borderRadius:12,background:'rgba(232,245,233,0.93)',textAlign:'center',zIndex:5}}>
             <div style=${{fontSize:'clamp(10px,2vw,14px)',letterSpacing:3,textTransform:'uppercase',color:'#2E7D32',fontWeight:700}}>✓ SOIN RÉALISÉ</div>
             <div style=${{fontFamily:"'Cormorant Garamond',serif",fontSize:'clamp(14px,3vw,22px)',fontWeight:600,color:'#2E7D32'}}>le ${fmtDate(current.usedDate)}</div></div>`:''}</div></div>
-      <div style=${{padding:'0 18px 6px',textAlign:'center',maxWidth:700,margin:'0 auto'}}>
+      <div style=${{padding:'0 18px 6px',textAlign:'center',maxWidth:500,margin:'0 auto'}}>
         ${current.used?html`<div style=${{fontSize:13,color:'#4CAF50',fontWeight:600,marginBottom:8}}>Soin réalisé — repartager ↓</div>`:''}</div>
-      <div style=${{padding:'0 18px 10px',display:'flex',gap:10,maxWidth:700,margin:'0 auto'}}>
+      <div style=${{padding:'0 18px 10px',display:'flex',gap:10,maxWidth:500,margin:'0 auto'}}>
         <button onClick=${shareCard} disabled=${sharing} style=${{...sBtn,flex:1}}>${sharing?'⏳':current.used?'📤 Renvoyer':'📤 Partager'}</button>
         ${!current.used?html`<button onClick=${toggleUsed} style=${{padding:'14px 18px',borderRadius:12,cursor:'pointer',fontSize:13,fontWeight:600,border:'none',background:C.gold+'25',color:C.gold}}>Valider soin</button>`:''}</div>
     </div>`}
