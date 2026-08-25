@@ -51,19 +51,11 @@ const SYNC_URL='https://script.google.com/macros/s/AKfycbx3roxkcxG5aa15dh0o1dAUG
 const SYNC_SECRET='nim2026secret';
 const syncAll=cards=>{if(!SYNC_URL)return;
   const data=JSON.stringify({secret:SYNC_SECRET,cards});
-  // sendBeacon handles redirects reliably
-  if(navigator.sendBeacon){
-    const ok=navigator.sendBeacon(SYNC_URL,new Blob([data],{type:'text/plain;charset=utf-8'}));
-    console.log(ok?'✅ Sync envoyé':'❌ Sync échoué');
-  }else{
-    // Fallback: hidden form POST via iframe
-    const f=document.createElement('form');f.method='POST';f.action=SYNC_URL;f.target='syncFrame';f.style.display='none';
-    const i=document.createElement('input');i.name='data';i.value=data;f.appendChild(i);
-    let ifr=document.getElementById('syncFrame');
-    if(!ifr){ifr=document.createElement('iframe');ifr.id='syncFrame';ifr.name='syncFrame';ifr.style.display='none';document.body.appendChild(ifr)}
-    document.body.appendChild(f);f.submit();document.body.removeChild(f);
-    console.log('✅ Sync envoyé (form)')
-  }};
+  const url=SYNC_URL+'?action=sync&data='+encodeURIComponent(data);
+  fetch(url).then(r=>r.text()).then(t=>{
+    try{const j=JSON.parse(t);console.log(j.ok?'✅ Sync: '+j.count+' cartes':'❌ Sync: '+t)}
+    catch(e){console.log('Sync réponse:',t.substring(0,200))}
+  }).catch(e=>console.warn('Sync erreur:',e.message))};
 const cardUrl=id=>'https://esengchanh-blip.github.io/nim-cards/c.html?id='+id;
 // ═══ Message WhatsApp enrichi ═══
 const FRESHA_URL='';// Lien de réservation Fresha — à renseigner quand le profil marketplace sera publié
