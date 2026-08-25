@@ -21,6 +21,7 @@ body{font-family:'Raleway',sans-serif;min-height:100dvh;background:linear-gradie
 input,select,button{font-family:inherit}
 .cg{font-family:'Cormorant Garamond',serif}
 .ds{font-family:'Dancing Script',cursive}
+a{color:inherit}
 </style>
 </head>
 <body>
@@ -31,18 +32,42 @@ import{useState,useEffect,useRef}from'https://esm.sh/preact@10.24.3/hooks';
 import htm from'https://esm.sh/htm@3.1.1';
 const html=htm.bind(h);
 
-const C={mauve:'#9B7BB8',mauveDark:'#7B5B98',mauveLight:'#B89FCC',gold:'#D4AF37',goldDark:'#C9A63D',red:'#C0392B',white:'#FFF',cream:'#FFF8E7',creamDark:'#F0E6D0',magenta:'#B6007D'};
+const C={mauve:'#9B7BB8',mauveDark:'#7B5B98',mauveLight:'#B89FCC',gold:'#D4AF37',goldDark:'#C9A63D',red:'#C0392B',white:'#FFF',cream:'#FFF8E7',creamDark:'#F0E6D0',magenta:'#B6007D',orange:'#E67E22',green:'#4CAF50'};
 const SOINS=["Massage thaï traditionnel — 60 min","Massage thaï traditionnel — 90 min","Réflexologie plantaire — 60 min","Massage dos — 30 min","Massage pieds — 30 min","Rituel Sérénité","Rituel Évasion","Rituel Harmonie","Carnet Découverte (3 séances)","Carnet Fidèle (5 séances)","Pass Signature (10 séances)","Pass Duo Sérénité"];
 const genId=p=>p+'-'+Math.random().toString(36).substring(2,6).toUpperCase();
 const addM=(d,n)=>{const x=new Date(d);x.setMonth(x.getMonth()+n);return x.toISOString().slice(0,10)};
 const fmtD=d=>d?d.split('-').reverse().join(' / '):'';
+const fmtDS=d=>d?d.slice(5).split('-').reverse().join('/'):'';
 const pClean=p=>(p||'').replace(/[\s.\-]/g,'');
+const pIntl=p=>{const c=pClean(p);return c.startsWith('0')?'33'+c.slice(1):c};
+const today=()=>new Date().toISOString().slice(0,10);
+const daysTo=d=>Math.ceil((new Date(d)-new Date())/(1000*3600*24));
 const LS='nim-items-v3';
 const lsL=()=>{try{return JSON.parse(localStorage.getItem(LS)||'[]')}catch{return[]}};
 const lsS=d=>localStorage.setItem(LS,JSON.stringify(d));
+const vib=()=>{try{navigator.vibrate&&navigator.vibrate(60)}catch{}};
+// ═══ Backend sync (Google Apps Script) ═══
+const SYNC_URL='https://script.google.com/macros/s/AKfycbx3roxkcxG5aa15dh0o1dAUGn6oaaUng0lO1ygvqhcP_okFMC64uYv4gYnEuo3fo0n4/exec';// URL /exec du script Apps Script — à renseigner après déploiement
+const SYNC_SECRET='nim2026secret';
+const syncAll=cards=>{if(!SYNC_URL)return;
+  fetch(SYNC_URL,{method:'POST',body:JSON.stringify({secret:SYNC_SECRET,cards})}).catch(()=>{})};
+const cardUrl=id=>'https://esengchanh-blip.github.io/nim-cards/c.html?id='+id;
+// ═══ Message WhatsApp enrichi ═══
+const FRESHA_URL='';// Lien de réservation Fresha — à renseigner quand le profil marketplace sera publié
+const SALON='*Nim Thaï Massage Bien Être*';
+const bookLine=()=>FRESHA_URL?'📅 Réserver votre prochain soin : '+FRESHA_URL:'📅 Réservation : 07 61 11 66 65 (tél ou WhatsApp)';
+const waMsg=c=>{
+  if(!c)return '';
+  const liveLine=SYNC_URL?'\n🔗 Votre carte en direct : '+cardUrl(c.id):'';
+  if(c.type==='abo'){const done=c.visits.filter(Boolean).length;const left=5-done;
+    return '🪷 '+SALON+'\nBonjour '+c.name+' !\nVotre carte d\'abonnement : '+done+'/5 passages.\n'
+      +(left>0?'Il vous reste '+left+' séance'+(left>1?'s':'')+'.':'🎉 Carte complète — votre prochaine séance est offerte !')
+      +liveLine+'\n'+bookLine()}
+  if(c.used)return '🙏 '+SALON+'\nMerci de votre visite ! Votre soin « '+c.soin+' » a été réalisé le '+fmtD(c.usedDate)+'.'+liveLine+'\n'+bookLine();
+  return '🎁 '+SALON+'\nVotre chèque cadeau : '+c.soin+'\nOffert par '+c.deLaPart+'.\n⏳ Valable jusqu\'au '+fmtD(c.validUntil)+liveLine+'\n'+bookLine()};
 async function scanQR(f){try{const b=await createImageBitmap(f);if('BarcodeDetector' in window){const d=new BarcodeDetector({formats:['qr_code']});const r=await d.detect(b);if(r.length>0)return r[0].rawValue}}catch{}return null}
 function loadH2C(){return new Promise((ok,no)=>{if(window.html2canvas){ok(window.html2canvas);return}const s=document.createElement('script');s.src='https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';s.onload=()=>ok(window.html2canvas);s.onerror=no;document.head.appendChild(s)})}
-function QR({data,size=60}){const[ok,setOk]=useState(true);const url='https://api.qrserver.com/v1/create-qr-code/?size='+size*2+'x'+size*2+'&data='+encodeURIComponent(data)+'&margin=3&format=png';
+function QR({data,size=55}){const[ok,setOk]=useState(true);const url='https://api.qrserver.com/v1/create-qr-code/?size='+size*2+'x'+size*2+'&data='+encodeURIComponent(data)+'&margin=3&format=png';
   if(!ok)return html`<div style=${{width:size,height:size,background:'#fff',borderRadius:4,display:'flex',alignItems:'center',justifyContent:'center',fontFamily:'monospace',fontSize:9,color:'#333'}}>${data}</div>`;
   return html`<img src=${url} width=${size} height=${size} crossorigin="anonymous" style=${{borderRadius:4,background:'#fff',padding:2}} onError=${()=>setOk(false)}/>`;
 }
@@ -54,148 +79,222 @@ function App(){
   const[ld,setLd]=useState(true);
   const[sh,setSh]=useState(false);
   const[search,setSearch]=useState('');
+  const[filt,setFilt]=useState('tous');
   const[sm,setSm]=useState('');
   const[cP,setCP]=useState('');const[cN,setCN]=useState('');const[fC,setFC]=useState(null);
   const[dur,setDur]=useState('1h');
   const[gP,setGP]=useState('');const[gD,setGD]=useState('');const[gS,setGS]=useState(SOINS[0]);
-  const cr=useRef(null);const sr=useRef(null);const ir=useRef(null);
+  const[pinOk,setPinOk]=useState(false);
+  const[pinIn,setPinIn]=useState('');
+  const cr=useRef(null);const srf=useRef(null);const ir=useRef(null);
 
-  useEffect(()=>{setItems(lsL());setLd(false)},[]);
-  const sv=async a=>{setItems(a);lsS(a)};
+  const savedPin=localStorage.getItem('nim-pin');
+
+  useEffect(()=>{setItems(lsL());setLd(false);
+    if(!savedPin)setPinOk(true);
+    // Export reminder: if >7 days since last export
+    const le=localStorage.getItem('nim-last-export');
+    if(le&&(Date.now()-parseInt(le))>7*24*3600*1000)setSm('💾 Pensez à exporter vos données (>7 jours)');
+  },[]);
+
+  const sv=async a=>{setItems(a);lsS(a);syncAll(a)};
   const fBP=p=>{const cl=pClean(p);if(cl.length<4)return null;const f=items.find(i=>pClean(i.phone)===cl||pClean(i.phone).endsWith(cl));return f?{name:f.name,phone:f.phone}:null};
   const mkAbo=async()=>{const it={type:'abo',id:genId('NIM'),name:cN,phone:pClean(cP),duration:dur,visits:[false,false,false,false,false],dates:[null,null,null,null,null],created:new Date().toISOString()};await sv([it,...items]);setCur(it);setSc('v-abo');setTimeout(autoCap,1000)};
   const mkCad=async()=>{const n=new Date().toISOString();const it={type:'cadeau',id:genId('CDO'),name:cN,phone:pClean(cP),pour:gP,deLaPart:gD,soin:gS,validUntil:addM(n,6),created:n,used:false,usedDate:null};await sv([it,...items]);setCur(it);setSc('v-cad');setTimeout(autoCap,1000)};
-  const tV=async i=>{const u=items.map(c=>{if(c.id!==cur.id)return c;const v=[...c.visits],d=[...(c.dates||[null,null,null,null,null])];v[i]=!v[i];d[i]=v[i]?new Date().toISOString().slice(0,10):null;return{...c,visits:v,dates:d}});await sv(u);setCur(u.find(c=>c.id===cur.id));setTimeout(autoCap,600)};
-  const tU=async()=>{const u=items.map(c=>c.id!==cur.id?c:{...c,used:!c.used,usedDate:!c.used?new Date().toISOString().slice(0,10):null});await sv(u);setCur(u.find(c=>c.id===cur.id));setTimeout(autoCap,600)};
+  const tV=async i=>{
+    const isStamping=!cur.visits[i];
+    if(isStamping&&!confirm('Confirmer le passage n°'+(i+1)+' ?'))return;
+    if(!isStamping&&!confirm('Annuler le tampon n°'+(i+1)+' ?'))return;
+    vib();
+    const u=items.map(c=>{if(c.id!==cur.id)return c;const v=[...c.visits],d=[...(c.dates||[null,null,null,null,null])];v[i]=!v[i];d[i]=v[i]?today():null;return{...c,visits:v,dates:d}});
+    await sv(u);setCur(u.find(c=>c.id===cur.id));
+    if(isStamping)setTimeout(autoCap,600)};
+  const tU=async()=>{
+    if(!cur.used&&!confirm('Valider le soin ?'))return;
+    if(cur.used&&!confirm('Annuler la validation ?'))return;
+    vib();
+    const u=items.map(c=>c.id!==cur.id?c:{...c,used:!c.used,usedDate:!c.used?today():null});
+    await sv(u);setCur(u.find(c=>c.id===cur.id));
+    if(!cur.used)setTimeout(autoCap,600)};
   const del=async id=>{await sv(items.filter(c=>c.id!==id));setSc('home')};
   const open=it=>{setCur(it);setSc(it.type==='abo'?'v-abo':'v-cad')};
-  // Auto-capture: screenshot card and trigger share/download
-  const autoCap=async()=>{if(!cr.current)return;try{const h=await loadH2C();const cv=await h(cr.current,{backgroundColor:null,scale:2,useCORS:true,logging:false});const bl=await new Promise(r=>cv.toBlob(r,'image/png'));const f=new File([bl],(cur?.id||'carte')+'.png',{type:'image/png'});if(navigator.canShare&&navigator.canShare({files:[f]}))await navigator.share({files:[f],title:(cur?.id||'carte')+' — Nim Thaï'});else{const u=URL.createObjectURL(bl);const a=document.createElement('a');a.href=u;a.download=f.name;a.click();URL.revokeObjectURL(u)}}catch{}};
-  const share=async()=>{if(!cr.current)return;setSh(true);try{const h=await loadH2C();const cv=await h(cr.current,{backgroundColor:null,scale:2,useCORS:true,logging:false});const bl=await new Promise(r=>cv.toBlob(r,'image/png'));const f=new File([bl],cur.id+'.png',{type:'image/png'});if(navigator.canShare&&navigator.canShare({files:[f]}))await navigator.share({files:[f],title:cur.id});else{const u=URL.createObjectURL(bl);const a=document.createElement('a');a.href=u;a.download=f.name;a.click();URL.revokeObjectURL(u)}}catch(e){if(e.name!=='AbortError')alert('Erreur: '+e.message)}setSh(false)};
-  const hScan=async e=>{const f=e.target.files?.[0];if(!f)return;setSm('Analyse…');const r=await scanQR(f);if(r){const fd=items.find(c=>c.id===r);if(fd){setSm('');if(fd.type==='cadeau'&&!fd.used){const t=new Date().toISOString().slice(0,10);const u=items.map(c=>c.id===fd.id?{...c,used:true,usedDate:t}:c);await sv(u);setCur(u.find(c=>c.id===fd.id));setSc('v-cad')}else{open(fd)}e.target.value='';return}setSm('"'+r+'" — non trouvé')}else{setSm('QR non détecté')}e.target.value='';setTimeout(()=>setSm(''),3500)};
+  const autoCap=async()=>{if(!cr.current)return;try{const h=await loadH2C();const cv=await h(cr.current,{backgroundColor:null,scale:2,useCORS:true,logging:false});const bl=await new Promise(r=>cv.toBlob(r,'image/png'));const f=new File([bl],(cur?.id||'carte')+'.png',{type:'image/png'});if(navigator.canShare&&navigator.canShare({files:[f]}))await navigator.share({files:[f],title:(cur?.id||'carte')+' — Nim Thaï',text:waMsg(cur)});else{const u=URL.createObjectURL(bl);const a=document.createElement('a');a.href=u;a.download=f.name;a.click();URL.revokeObjectURL(u)}}catch{}};
+  const share=async()=>{if(!cr.current)return;setSh(true);try{const h=await loadH2C();const cv=await h(cr.current,{backgroundColor:null,scale:2,useCORS:true,logging:false});const bl=await new Promise(r=>cv.toBlob(r,'image/png'));const f=new File([bl],cur.id+'.png',{type:'image/png'});if(navigator.canShare&&navigator.canShare({files:[f]}))await navigator.share({files:[f],title:cur.id,text:waMsg(cur)});else{const u=URL.createObjectURL(bl);const a=document.createElement('a');a.href=u;a.download=f.name;a.click();URL.revokeObjectURL(u)}}catch(e){if(e.name!=='AbortError')alert('Erreur: '+e.message)}setSh(false)};
+  const waOpen=()=>{const p=pIntl(cur.phone);window.open('https://wa.me/'+p+'?text='+encodeURIComponent(waMsg(cur)),'_blank')};
+  const hScan=async e=>{const f=e.target.files?.[0];if(!f)return;setSm('Analyse…');const r=await scanQR(f);if(r){const fd=items.find(c=>c.id===r);if(fd){setSm('');if(fd.type==='cadeau'&&!fd.used){if(confirm('Valider le soin pour '+fd.pour+' ?')){const u=items.map(c=>c.id===fd.id?{...c,used:true,usedDate:today()}:c);await sv(u);setCur(u.find(c=>c.id===fd.id));setSc('v-cad');vib();setTimeout(autoCap,600)}else{open(fd)}}else{open(fd)}e.target.value='';return}setSm('"'+r+'" — non trouvé')}else{setSm('QR non détecté')}e.target.value='';setTimeout(()=>setSm(''),3500)};
   const sC=c=>c.visits.filter(Boolean).length;
   const isCo=c=>c.type==='abo'&&sC(c)===5;
-  const isEx=c=>c.type==='cadeau'&&c.validUntil<new Date().toISOString().slice(0,10);
+  const isEx=c=>c.type==='cadeau'&&c.validUntil<today();
+  const isExpSoon=c=>c.type==='cadeau'&&!c.used&&!isEx(c)&&daysTo(c.validUntil)<=30;
   const startN=()=>{setCP('');setCN('');setFC(null);setDur('1h');setGP('');setGD('');setGS(SOINS[0]);setSc('id')};
-  const fil=search?items.filter(i=>(i.name||'').toLowerCase().includes(search.toLowerCase())||i.id.toLowerCase().includes(search.toLowerCase())||pClean(i.phone).includes(pClean(search))||(i.pour||'').toLowerCase().includes(search.toLowerCase())):items;
+  const doExport=()=>{const b=new Blob([JSON.stringify(items,null,2)],{type:'application/json'});const u=URL.createObjectURL(b);const a=document.createElement('a');a.href=u;a.download='nim-backup-'+today()+'.json';a.click();URL.revokeObjectURL(u);localStorage.setItem('nim-last-export',Date.now().toString());setSm('')};
+
+  // Stats
+  const stats={
+    abosActifs:items.filter(i=>i.type==='abo'&&!isCo(i)).length,
+    cadeauxActifs:items.filter(i=>i.type==='cadeau'&&!i.used&&!isEx(i)).length,
+    expirants:items.filter(isExpSoon).length,
+    completesMois:items.filter(i=>isCo(i)&&(i.dates||[]).some(d=>d&&d.startsWith(today().slice(0,7)))).length,
+  };
+
+  // Filter
+  let fil=items;
+  if(filt==='abo')fil=fil.filter(i=>i.type==='abo');
+  if(filt==='cadeau')fil=fil.filter(i=>i.type==='cadeau');
+  if(filt==='actif')fil=fil.filter(i=>!(i.used||isCo(i)||isEx(i)));
+  if(search)fil=fil.filter(i=>(i.name||'').toLowerCase().includes(search.toLowerCase())||i.id.toLowerCase().includes(search.toLowerCase())||pClean(i.phone).includes(pClean(search))||(i.pour||'').toLowerCase().includes(search.toLowerCase()));
 
   const btn={width:'100%',padding:'14px',borderRadius:12,border:'none',background:'linear-gradient(135deg,'+C.gold+','+C.goldDark+')',color:'#1a0a2e',fontSize:15,fontWeight:600,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',gap:8};
   const inp={width:'100%',padding:'12px 14px',borderRadius:10,border:'2px solid '+C.gold+'50',background:'rgba(255,255,255,0.85)',color:'#333',fontSize:17,outline:'none',boxSizing:'border-box',textAlign:'center'};
   const nav=html`<div style=${{padding:'10px 16px 6px',display:'flex',justifyContent:'space-between'}}><button onClick=${()=>setSc('home')} style=${{background:'rgba(0,0,0,0.35)',border:'none',color:'#fff',fontSize:13,cursor:'pointer',padding:'7px 16px',borderRadius:8,fontWeight:600}}>← Accueil</button><button onClick=${()=>{if(confirm('Supprimer ?'))del(cur.id)}} style=${{background:'rgba(192,57,43,0.35)',border:'none',color:'#fdd',fontSize:12,cursor:'pointer',padding:'7px 14px',borderRadius:8}}>Supprimer</button></div>`;
 
+  // ═══ PIN LOCK ═══
+  if(!pinOk){return html`<div style=${{display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',minHeight:'80vh',padding:24}}>
+    <div class="ds" style=${{fontSize:36,fontWeight:700,color:C.gold,marginBottom:8}}>Nim Thaï</div>
+    <div style=${{fontSize:12,letterSpacing:3,textTransform:'uppercase',color:C.creamDark,marginBottom:32}}>🔒 Code d'accès</div>
+    <input type="tel" value=${pinIn} onInput=${e=>{const v=e.target.value.slice(0,4);setPinIn(v);
+      if(v.length===4){if(v===savedPin){setPinOk(true)}else{setPinIn('');vib()}}}}
+      placeholder="• • • •" maxlength="4" autofocus
+      style=${{...inp,maxWidth:180,fontSize:28,letterSpacing:12,textAlign:'center'}}/>
+    </div>`}
+
   // ═══ HOME ═══
   if(sc==='home'){return html`<div>
-    <div style=${{padding:'28px 20px 12px',textAlign:'center'}}><div class="ds" style=${{fontSize:32,fontWeight:700,color:C.gold}}>Nim Thaï</div><div style=${{fontSize:10,letterSpacing:4,textTransform:'uppercase',color:C.creamDark,marginTop:2}}>Gestion clients</div></div>
-    <div style=${{padding:'0 20px 10px'}}><input value=${search} onInput=${e=>setSearch(e.target.value)} placeholder="Nom, téléphone ou ID…" style=${{...inp,fontSize:14,border:'1px solid '+C.gold+'30'}}/></div>
+    <div style=${{padding:'24px 20px 8px',textAlign:'center',position:'relative'}}>
+      <div class="ds" style=${{fontSize:32,fontWeight:700,color:C.gold}}>Nim Thaï</div>
+      <div style=${{fontSize:10,letterSpacing:4,textTransform:'uppercase',color:C.creamDark,marginTop:2}}>Gestion clients</div>
+      <button onClick=${()=>{
+        if(savedPin){if(confirm('Désactiver le code PIN ?')){localStorage.removeItem('nim-pin');alert('PIN désactivé');location.reload()}}
+        else{const p=prompt('Choisir un code PIN à 4 chiffres :');if(p&&/^\d{4}$/.test(p)){localStorage.setItem('nim-pin',p);alert('PIN activé ✓')}else if(p){alert('4 chiffres requis')}}}}
+        style=${{position:'absolute',right:16,top:24,background:'rgba(0,0,0,0.2)',border:'none',color:savedPin?C.gold:C.creamDark,fontSize:16,cursor:'pointer',padding:'6px 10px',borderRadius:8}}>${savedPin?'🔒':'🔓'}</button>
+    </div>
+    <!-- Stats -->
+    <div style=${{padding:'0 20px 10px',display:'flex',gap:6,flexWrap:'wrap',justifyContent:'center'}}>
+      <div style=${{padding:'5px 10px',borderRadius:8,background:C.gold+'20',fontSize:11,color:C.gold}}>🪷 ${stats.abosActifs} abo${stats.abosActifs>1?'s':''}</div>
+      <div style=${{padding:'5px 10px',borderRadius:8,background:C.magenta+'20',fontSize:11,color:'#f0a0d0'}}>🎁 ${stats.cadeauxActifs} chèque${stats.cadeauxActifs>1?'s':''}</div>
+      ${stats.expirants>0&&html`<div style=${{padding:'5px 10px',borderRadius:8,background:C.orange+'30',fontSize:11,color:'#FFB366',fontWeight:600}}>⚠️ ${stats.expirants} expire${stats.expirants>1?'nt':''} bientôt</div>`}
+    </div>
+    <div style=${{padding:'0 20px 8px'}}><input value=${search} onInput=${e=>setSearch(e.target.value)} placeholder="Nom, téléphone ou ID…" style=${{...inp,fontSize:14,border:'1px solid '+C.gold+'30'}}/></div>
+    <!-- Filter chips -->
+    <div style=${{padding:'0 20px 10px',display:'flex',gap:6}}>
+      ${[['tous','Tous'],['abo','🪷 Abos'],['cadeau','🎁 Chèques'],['actif','Actifs']].map(([k,l])=>html`
+        <button onClick=${()=>setFilt(k)} style=${{flex:1,padding:'7px 4px',borderRadius:8,border:'none',fontSize:12,cursor:'pointer',
+          background:filt===k?C.gold:'rgba(255,255,255,0.12)',color:filt===k?'#1a0a2e':C.creamDark,fontWeight:filt===k?600:400}}>${l}</button>`)}
+    </div>
     <div style=${{padding:'0 20px 14px',display:'flex',gap:10}}><button onClick=${startN} style=${{...btn,flex:1}}>+ Nouveau</button>
-      <button onClick=${()=>sr.current?.click()} style=${{padding:'14px 18px',borderRadius:12,background:C.white+'15',border:'1px solid '+C.gold+'50',color:C.gold,fontSize:20,cursor:'pointer'}}>📷</button>
-      <input ref=${sr} type="file" accept="image/*" capture="environment" onChange=${hScan} style=${{display:'none'}}/></div>
-    ${sm&&html`<div style=${{padding:'0 20px 10px'}}><div style=${{padding:10,borderRadius:10,background:C.white+'12',fontSize:13,color:C.cream,textAlign:'center'}}>${sm}</div></div>`}
-    <div style=${{padding:'0 20px'}}>${ld?html`<div style=${{textAlign:'center',padding:40,color:C.creamDark}}>…</div>`:fil.length===0?html`<div style=${{textAlign:'center',padding:30,color:C.creamDark,fontSize:14}}>${search?'Aucun résultat':'Aucun client'}</div>`:fil.map(it=>html`<div key=${it.id} onClick=${()=>open(it)} style=${{background:C.white+'10',borderRadius:14,padding:'12px 14px',marginBottom:8,cursor:'pointer',border:'1px solid '+C.gold+'25',opacity:(it.used||isCo(it))?0.55:1,display:'flex',justifyContent:'space-between',alignItems:'center'}}>
-      <div><div style=${{fontSize:15,fontWeight:600,display:'flex',alignItems:'center',gap:8}}><span style=${{fontSize:10,padding:'2px 7px',borderRadius:6,background:it.type==='abo'?C.gold+'30':C.magenta+'30',color:it.type==='abo'?C.gold:C.magenta}}>${it.type==='abo'?'ABO':'CADEAU'}</span>${it.type==='cadeau'?it.pour:it.name}</div><div style=${{fontSize:11,color:C.creamDark,marginTop:3}}>${it.id} · ${it.phone}</div></div>
-      ${it.type==='abo'?html`<div style=${{display:'flex',gap:3}}>${it.visits.map(v=>html`<div style=${{width:12,height:12,borderRadius:'50%',border:'2px solid '+C.gold,background:v?C.gold:'transparent'}}/>`)}</div>`:html`<div style=${{fontSize:11,fontWeight:600,color:it.used?'#4CAF50':isEx(it)?C.red:C.creamDark}}>${it.used?'✓':isEx(it)?'Exp.':'→'+fmtD(it.validUntil)}</div>`}</div>`)}</div>
+      <button onClick=${()=>srf.current?.click()} style=${{padding:'14px 18px',borderRadius:12,background:C.white+'15',border:'1px solid '+C.gold+'50',color:C.gold,fontSize:20,cursor:'pointer'}}>📷</button>
+      <input ref=${srf} type="file" accept="image/*" capture="environment" onChange=${hScan} style=${{display:'none'}}/></div>
+    ${sm&&html`<div style=${{padding:'0 20px 10px'}}><div onClick=${sm.startsWith('💾')?doExport:null} style=${{padding:10,borderRadius:10,background:sm.startsWith('💾')?C.orange+'25':C.white+'12',fontSize:13,color:C.cream,textAlign:'center',cursor:sm.startsWith('💾')?'pointer':'default'}}>${sm}</div></div>`}
+    <div style=${{padding:'0 20px'}}>${ld?html`<div style=${{textAlign:'center',padding:40,color:C.creamDark}}>…</div>`:fil.length===0?html`<div style=${{textAlign:'center',padding:30,color:C.creamDark,fontSize:14}}>${search?'Aucun résultat':'Aucun client'}</div>`:fil.map(it=>{
+      const expSoon=isExpSoon(it);
+      return html`<div key=${it.id} onClick=${()=>open(it)} style=${{background:expSoon?C.orange+'18':C.white+'10',borderRadius:14,padding:'12px 14px',marginBottom:8,cursor:'pointer',
+        border:expSoon?'1px solid '+C.orange+'60':'1px solid '+C.gold+'25',opacity:(it.used||isCo(it)||isEx(it))?0.55:1,display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+      <div style=${{minWidth:0}}><div style=${{fontSize:15,fontWeight:600,display:'flex',alignItems:'center',gap:8}}>
+        <span style=${{fontSize:10,padding:'2px 7px',borderRadius:6,background:it.type==='abo'?C.gold+'30':C.magenta+'30',color:it.type==='abo'?C.gold:'#f0a0d0'}}>${it.type==='abo'?'ABO':'CADEAU'}</span>
+        ${it.type==='cadeau'?it.pour:it.name}</div>
+        <div style=${{fontSize:11,color:C.creamDark,marginTop:3}}>${it.id} · <a href=${'tel:'+it.phone} onClick=${e=>e.stopPropagation()} style=${{textDecoration:'underline'}}>${it.phone}</a>
+        ${expSoon?html`<span style=${{color:'#FFB366',fontWeight:600}}> · ⚠️ expire dans ${daysTo(it.validUntil)}j</span>`:''}</div></div>
+      ${it.type==='abo'?html`<div style=${{display:'flex',gap:3,flexShrink:0}}>${it.visits.map(v=>html`<div style=${{width:12,height:12,borderRadius:'50%',border:'2px solid '+C.gold,background:v?C.gold:'transparent'}}/>`)}</div>`
+      :html`<div style=${{fontSize:11,flexShrink:0,fontWeight:600,color:it.used?C.green:isEx(it)?C.red:expSoon?'#FFB366':C.creamDark}}>${it.used?'✓':isEx(it)?'Expiré':'→'+fmtD(it.validUntil)}</div>`}
+    </div>`})}</div>
     ${items.length>0&&html`<div style=${{padding:'16px 20px 0',display:'flex',gap:8}}>
-      <button onClick=${()=>{const b=new Blob([JSON.stringify(items,null,2)],{type:'application/json'});const u=URL.createObjectURL(b);const a=document.createElement('a');a.href=u;a.download='nim-backup.json';a.click();URL.revokeObjectURL(u)}} style=${{flex:1,padding:10,borderRadius:10,background:C.white+'10',border:'1px solid '+C.gold+'25',color:C.creamDark,fontSize:12,cursor:'pointer'}}>💾 Exporter</button>
+      <button onClick=${doExport} style=${{flex:1,padding:10,borderRadius:10,background:C.white+'10',border:'1px solid '+C.gold+'25',color:C.creamDark,fontSize:12,cursor:'pointer'}}>💾 Exporter</button>
       <button onClick=${()=>ir.current?.click()} style=${{flex:1,padding:10,borderRadius:10,background:C.white+'10',border:'1px solid '+C.gold+'25',color:C.creamDark,fontSize:12,cursor:'pointer'}}>📂 Importer</button>
       <input ref=${ir} type="file" accept=".json" onChange=${async e=>{const f=e.target.files?.[0];if(!f)return;try{const t=await f.text();const d=JSON.parse(t);if(Array.isArray(d)){await sv(d);alert('✅ '+d.length+' restaurées')}else alert('Invalide')}catch{alert('Erreur')}e.target.value=''}} style=${{display:'none'}}/></div>`}
     <div style=${{height:40}}/></div>`}
 
-  // ═══ IDENTIFY → CHOOSE → CREATE (compact) ═══
+  // ═══ IDENTIFY ═══
   if(sc==='id'){const hp=v=>{setCP(v);const f=fBP(v);setFC(f);if(f)setCN(f.name)};const ok=pClean(cP).length>=6&&cN.trim().length>=2;
     return html`<div><div style=${{padding:20}}><button onClick=${()=>setSc('home')} style=${{background:'rgba(0,0,0,0.3)',border:'none',color:'#fff',fontSize:13,cursor:'pointer',padding:'7px 14px',borderRadius:8}}>← Retour</button></div>
     <div style=${{padding:'0 24px',textAlign:'center'}}><div class="cg" style=${{fontSize:24,color:C.gold,fontWeight:600,marginBottom:24}}>Identification client</div>
-      <div style=${{marginBottom:18}}><label style=${{fontSize:11,letterSpacing:2,textTransform:'uppercase',color:C.creamDark,display:'block',marginBottom:6}}>Téléphone</label><input value=${cP} onInput=${e=>hp(e.target.value)} placeholder="06 12 34 56 78" type="tel" autofocus style=${{...inp,letterSpacing:2}}/></div>
+      <div style=${{marginBottom:18}}><label style=${{fontSize:11,letterSpacing:2,textTransform:'uppercase',color:C.creamDark,display:'block',marginBottom:6}}>Téléphone</label>
+        <input value=${cP} onInput=${e=>hp(e.target.value)} placeholder="06 12 34 56 78" type="tel" autofocus style=${{...inp,letterSpacing:2}}/></div>
       ${fC&&html`<div style=${{padding:'10px 14px',borderRadius:10,background:C.gold+'15',border:'1px solid '+C.gold+'30',marginBottom:16,fontSize:14,color:C.gold}}>Client : <strong>${fC.name}</strong></div>`}
-      ${!fC&&pClean(cP).length>=6&&html`<div style=${{marginBottom:18}}><label style=${{fontSize:11,letterSpacing:2,textTransform:'uppercase',color:C.creamDark,display:'block',marginBottom:6}}>Nom</label><input value=${cN} onInput=${e=>setCN(e.target.value)} placeholder="Marie Dupont" style=${{...inp,fontFamily:"'Cormorant Garamond',serif"}}/></div>`}
+      ${!fC&&pClean(cP).length>=6&&html`<div style=${{marginBottom:18}}><label style=${{fontSize:11,letterSpacing:2,textTransform:'uppercase',color:C.creamDark,display:'block',marginBottom:6}}>Nom</label>
+        <input value=${cN} onInput=${e=>setCN(e.target.value)} placeholder="Marie Dupont" style=${{...inp,fontFamily:"'Cormorant Garamond',serif"}}/></div>`}
       <button onClick=${()=>setSc('ch')} disabled=${!ok} style=${{...btn,background:ok?btn.background:C.gold+'30',color:ok?'#1a0a2e':C.creamDark}}>Continuer →</button></div></div>`}
 
+  // ═══ CHOOSE ═══
   if(sc==='ch'){return html`<div><div style=${{padding:20}}><button onClick=${()=>setSc('id')} style=${{background:'rgba(0,0,0,0.3)',border:'none',color:'#fff',fontSize:13,cursor:'pointer',padding:'7px 14px',borderRadius:8}}>← Retour</button></div>
-    <div style=${{padding:'0 24px',textAlign:'center'}}><div style=${{fontSize:13,color:C.creamDark,marginBottom:6}}>${cN} · ${cP}</div><div class="cg" style=${{fontSize:24,color:C.gold,fontWeight:600,marginBottom:28}}>Quel support ?</div>
-      <button onClick=${()=>setSc('mk-abo')} style=${{width:'100%',padding:'24px',borderRadius:16,marginBottom:14,background:C.white+'10',border:'2px solid '+C.gold+'50',cursor:'pointer',color:C.white,textAlign:'center'}}><div style=${{fontSize:28}}>🪷</div><div class="cg" style=${{fontSize:20,fontWeight:600,color:C.gold}}>Carte d'abonnement</div></button>
-      <button onClick=${()=>{setGP(cN);setSc('mk-cad')}} style=${{width:'100%',padding:'24px',borderRadius:16,background:C.white+'10',border:'2px solid '+C.magenta+'50',cursor:'pointer',color:C.white,textAlign:'center'}}><div style=${{fontSize:28}}>🎁</div><div class="cg" style=${{fontSize:20,fontWeight:600,color:C.magenta}}>Chèque cadeau</div></button></div></div>`}
+    <div style=${{padding:'0 24px',textAlign:'center'}}>
+      <div style=${{fontSize:13,color:C.creamDark,marginBottom:6}}>${cN} · ${cP}</div>
+      <div class="cg" style=${{fontSize:24,color:C.gold,fontWeight:600,marginBottom:28}}>Quel support ?</div>
+      <button onClick=${()=>setSc('mk-abo')} style=${{width:'100%',padding:'24px',borderRadius:16,marginBottom:14,background:C.white+'10',border:'2px solid '+C.gold+'50',cursor:'pointer',color:C.white,textAlign:'center'}}>
+        <div style=${{fontSize:28}}>🪷</div><div class="cg" style=${{fontSize:20,fontWeight:600,color:C.gold}}>Carte d'abonnement</div></button>
+      <button onClick=${()=>{setGP(cN);setSc('mk-cad')}} style=${{width:'100%',padding:'24px',borderRadius:16,background:C.white+'10',border:'2px solid '+C.magenta+'50',cursor:'pointer',color:C.white,textAlign:'center'}}>
+        <div style=${{fontSize:28}}>🎁</div><div class="cg" style=${{fontSize:20,fontWeight:600,color:'#f0a0d0'}}>Chèque cadeau</div></button></div></div>`}
 
+  // ═══ CREATE ABO ═══
   if(sc==='mk-abo'){return html`<div><div style=${{padding:20}}><button onClick=${()=>setSc('ch')} style=${{background:'rgba(0,0,0,0.3)',border:'none',color:'#fff',fontSize:13,cursor:'pointer',padding:'7px 14px',borderRadius:8}}>← Retour</button></div>
-    <div style=${{padding:'0 24px',textAlign:'center'}}><div style=${{fontSize:13,color:C.creamDark,marginBottom:6}}>${cN}</div><div class="cg" style=${{fontSize:24,color:C.gold,fontWeight:600,marginBottom:24}}>Carte d'abonnement</div>
-      <div style=${{display:'flex',gap:12,justifyContent:'center',marginBottom:28}}>${['1h','1h30'].map(d=>html`<button onClick=${()=>setDur(d)} style=${{flex:1,maxWidth:130,padding:'16px',borderRadius:12,border:'2px solid '+C.gold,cursor:'pointer',fontSize:22,fontWeight:600,fontFamily:"'Cormorant Garamond',serif",background:dur===d?C.gold:'transparent',color:dur===d?'#1a0a2e':C.gold}}>${d}</button>`)}</div>
+    <div style=${{padding:'0 24px',textAlign:'center'}}>
+      <div style=${{fontSize:13,color:C.creamDark,marginBottom:6}}>${cN}</div>
+      <div class="cg" style=${{fontSize:24,color:C.gold,fontWeight:600,marginBottom:24}}>Carte d'abonnement</div>
+      <div style=${{display:'flex',gap:12,justifyContent:'center',marginBottom:28}}>
+        ${['1h','1h30'].map(d=>html`<button onClick=${()=>setDur(d)} style=${{flex:1,maxWidth:130,padding:'16px',borderRadius:12,border:'2px solid '+C.gold,cursor:'pointer',fontSize:22,fontWeight:600,fontFamily:"'Cormorant Garamond',serif",background:dur===d?C.gold:'transparent',color:dur===d?'#1a0a2e':C.gold}}>${d}</button>`)}</div>
       <button onClick=${mkAbo} style=${btn}>Créer</button></div></div>`}
 
+  // ═══ CREATE CADEAU ═══
   if(sc==='mk-cad'){const vd=addM(new Date().toISOString(),6);return html`<div><div style=${{padding:20}}><button onClick=${()=>setSc('ch')} style=${{background:'rgba(0,0,0,0.3)',border:'none',color:'#fff',fontSize:13,cursor:'pointer',padding:'7px 14px',borderRadius:8}}>← Retour</button></div>
-    <div style=${{padding:'0 24px'}}><div style=${{textAlign:'center'}} class="cg"><div style=${{fontSize:24,color:C.magenta,fontWeight:600,marginBottom:20}}>Chèque cadeau</div></div>
-      ${[{l:'Pour',v:gP,s:setGP,p:'Mme Dupont'},{l:'De la part de',v:gD,s:setGD,p:'Sa famille…'}].map(f=>html`<div style=${{marginBottom:18}}><label style=${{fontSize:11,letterSpacing:2,textTransform:'uppercase',color:C.creamDark,display:'block',marginBottom:6}}>${f.l}</label><input value=${f.v} onInput=${e=>f.s(e.target.value)} placeholder=${f.p} style=${{...inp,fontFamily:"'Cormorant Garamond',serif"}}/></div>`)}
-      <div style=${{marginBottom:18}}><label style=${{fontSize:11,letterSpacing:2,textTransform:'uppercase',color:C.creamDark,display:'block',marginBottom:6}}>Soin</label><select value=${gS} onChange=${e=>setGS(e.target.value)} style=${{...inp,border:'2px solid '+C.magenta+'50',fontSize:15,fontFamily:"'Cormorant Garamond',serif",WebkitAppearance:'none'}}>${SOINS.map(s=>html`<option value=${s} style=${{background:C.mauveDark,color:C.white}}>${s}</option>`)}</select></div>
-      <div style=${{padding:12,borderRadius:10,background:C.white+'08',marginBottom:20,textAlign:'center'}}><span style=${{fontSize:11,letterSpacing:2,textTransform:'uppercase',color:C.creamDark}}>Jusqu'au </span><span class="cg" style=${{fontSize:18,fontWeight:600,color:C.gold}}>${fmtD(vd)}</span></div>
+    <div style=${{padding:'0 24px'}}>
+      <div style=${{textAlign:'center'}} class="cg"><div style=${{fontSize:24,color:'#f0a0d0',fontWeight:600,marginBottom:20}}>Chèque cadeau</div></div>
+      ${[{l:'Pour',v:gP,s:setGP,p:'Mme Dupont'},{l:'De la part de',v:gD,s:setGD,p:'Sa famille…'}].map(f=>html`
+        <div style=${{marginBottom:18}}><label style=${{fontSize:11,letterSpacing:2,textTransform:'uppercase',color:C.creamDark,display:'block',marginBottom:6}}>${f.l}</label>
+        <input value=${f.v} onInput=${e=>f.s(e.target.value)} placeholder=${f.p} style=${{...inp,fontFamily:"'Cormorant Garamond',serif"}}/></div>`)}
+      <div style=${{marginBottom:18}}><label style=${{fontSize:11,letterSpacing:2,textTransform:'uppercase',color:C.creamDark,display:'block',marginBottom:6}}>Soin</label>
+        <select value=${gS} onChange=${e=>setGS(e.target.value)} style=${{...inp,border:'2px solid '+C.magenta+'50',fontSize:15,fontFamily:"'Cormorant Garamond',serif",WebkitAppearance:'none'}}>
+        ${SOINS.map(s=>html`<option value=${s}>${s}</option>`)}</select></div>
+      <div style=${{padding:12,borderRadius:10,background:C.white+'08',marginBottom:20,textAlign:'center'}}>
+        <span style=${{fontSize:11,letterSpacing:2,textTransform:'uppercase',color:C.creamDark}}>Jusqu'au </span>
+        <span class="cg" style=${{fontSize:18,fontWeight:600,color:C.gold}}>${fmtD(vd)}</span></div>
       <button onClick=${mkCad} disabled=${!gP.trim()||!gD.trim()} style=${{...btn,background:gP.trim()&&gD.trim()?'linear-gradient(135deg,'+C.magenta+','+C.red+')':C.gold+'30',color:gP.trim()&&gD.trim()?C.white:C.creamDark}}>Créer</button></div></div>`}
 
-  // ═══════════════════════════════════════
-  // CARTE D'ABONNEMENT — design fidèle avec logo + photo Nim
-  // ═══════════════════════════════════════
+  // ═══ VIEW ABO ═══
   if(sc==='v-abo'&&cur){const co=isCo(cur);
     return html`<div>${nav}
-    <div style=${{padding:'0 8px 12px',maxWidth:850,margin:'0 auto'}}>
+    <div style=${{padding:'0 8px 8px',maxWidth:850,margin:'0 auto'}}>
       <div ref=${cr} style=${{position:'relative',borderRadius:6,overflow:'hidden',boxShadow:'0 4px 20px rgba(0,0,0,0.35)'}}>
         <img src="bg-abo.jpg" alt="" style=${{width:'100%',display:'block'}} crossorigin="anonymous"/>
-        <!-- 5 stamp overlays on circles -->
         ${[0,1,2,3,4].map(i=>html`<div onClick=${()=>tV(i)}
-          style=${{position:'absolute',top:'28%',left:(42+i*10.2)+'%',width:'8.5%',paddingBottom:'8.5%',
-            borderRadius:'50%',cursor:'pointer',
-            background:cur.visits[i]?'rgba(212,175,55,0.7)':'transparent'}}>
-          ${cur.visits[i]?html`<div style=${{position:'absolute',top:'50%',left:'50%',transform:'translate(-50%,-50%)',
-            color:'#fff',fontSize:'clamp(16px,3.5vw,28px)',fontWeight:700}}>✓</div>`:''}</div>`)}
-        <!-- Duration red dot - aligned with checkboxes -->
-        <div style=${{position:'absolute',top:'55%',left:cur.duration==='1h'?'69%':'77%',
-          width:'clamp(14px,2.5vw,20px)',height:'clamp(14px,2.5vw,20px)',borderRadius:'50%',background:C.red}}></div>
-        <!-- Name after "Nom :" on the dotted line -->
-        <div style=${{position:'absolute',bottom:'5%',left:'55%',right:'6%',
-          fontFamily:"'Cormorant Garamond',serif",fontSize:'clamp(14px,3.2vw,26px)',
-          fontStyle:'italic',fontWeight:600,color:'#4a2866'}}>${cur.name}</div>
-        <!-- QR code - left side above contact info -->
+          style=${{position:'absolute',top:'28%',left:(42+i*10.2)+'%',width:'8.5%',paddingBottom:'8.5%',borderRadius:'50%',cursor:'pointer',background:cur.visits[i]?'rgba(212,175,55,0.7)':'transparent'}}>
+          ${cur.visits[i]?html`<div style=${{position:'absolute',top:'50%',left:'50%',transform:'translate(-50%,-50%)',color:'#fff',fontSize:'clamp(16px,3.5vw,28px)',fontWeight:700}}>✓</div>`:''}</div>`)}
+        ${/* Dates des passages sous les cercles */''}
+        ${[0,1,2,3,4].map(i=>(cur.dates||[])[i]?html`<div style=${{position:'absolute',top:'45%',left:(42+i*10.2)+'%',width:'8.5%',textAlign:'center',fontSize:'clamp(7px,1.2vw,10px)',color:'#4a2866',fontWeight:600}}>${fmtDS(cur.dates[i])}</div>`:'')}
+        <div style=${{position:'absolute',top:'55%',left:cur.duration==='1h'?'69%':'77%',width:'clamp(14px,2.5vw,20px)',height:'clamp(14px,2.5vw,20px)',borderRadius:'50%',background:C.red}}></div>
+        <div style=${{position:'absolute',bottom:'5%',left:'55%',right:'6%',fontFamily:"'Cormorant Garamond',serif",fontSize:'clamp(14px,3.2vw,26px)',fontStyle:'italic',fontWeight:600,color:'#4a2866'}}>${cur.name}</div>
         <div style=${{position:'absolute',bottom:'32%',left:'4%',display:'flex',alignItems:'center',gap:'2%'}}>
-          <${QR} data=${cur.id} size=${50}/>
+          <${QR} data=${cur.id} size=${55}/>
           <span style=${{fontFamily:'monospace',fontSize:'clamp(7px,1.2vw,10px)',color:C.gold+'cc'}}>${cur.id}</span></div>
-        <!-- Complete badge -->
-        ${co?html`<div style=${{position:'absolute',top:'42%',left:'62%',transform:'rotate(-15deg)',
-          padding:'1.5% 4%',border:'3px solid '+C.gold,borderRadius:10,background:'rgba(212,175,55,0.92)',
-          fontFamily:"'Cormorant Garamond',serif",fontSize:'clamp(12px,2.5vw,18px)',fontWeight:700,color:'#1a0a2e',
-          whiteSpace:'nowrap',zIndex:5}}>✦ 1 SÉANCE OFFERTE ✦</div>`:''}</div></div>
-    <div style=${{padding:'6px 18px 8px',textAlign:'center',fontSize:12,color:C.creamDark,maxWidth:850,margin:'0 auto'}}>${sC(cur)}/5 · ${cur.duration} · ${cur.id}</div>
-    <div style=${{padding:'0 18px 20px',maxWidth:850,margin:'0 auto'}}><button onClick=${share} disabled=${sh} style=${{...btn,background:sh?C.gold+'50':btn.background}}>${sh?'⏳':'📤 Partager la carte'}</button></div></div>`}
+        ${co?html`<div style=${{position:'absolute',top:'42%',left:'62%',transform:'rotate(-15deg)',padding:'1.5% 4%',border:'3px solid '+C.gold,borderRadius:10,background:'rgba(212,175,55,0.92)',fontFamily:"'Cormorant Garamond',serif",fontSize:'clamp(12px,2.5vw,18px)',fontWeight:700,color:'#1a0a2e',whiteSpace:'nowrap',zIndex:5}}>✦ 1 SÉANCE OFFERTE ✦</div>`:''}</div></div>
+    <div style=${{padding:'2px 18px 6px',textAlign:'center',fontSize:12,color:C.creamDark,maxWidth:850,margin:'0 auto'}}>${sC(cur)}/5 · ${cur.duration} · ${cur.id} · <a href=${'tel:'+cur.phone} style=${{color:C.gold}}>${cur.phone}</a></div>
+    <div style=${{padding:'0 18px 16px',display:'flex',gap:10,maxWidth:850,margin:'0 auto'}}>
+      <button onClick=${share} disabled=${sh} style=${{...btn,flex:1,background:sh?C.gold+'50':btn.background}}>${sh?'⏳':'📤 Partager'}</button>
+      <button onClick=${waOpen} style=${{padding:'14px 20px',borderRadius:12,border:'none',background:'#25D366',color:'#fff',fontSize:18,cursor:'pointer'}}>💬</button></div>
+    </div>`}
 
-  // ═══════════════════════════════════════
-  // CHÈQUE CADEAU — design fidèle
-  // ═══════════════════════════════════════
-  if(sc==='v-cad'&&cur){const ex=isEx(cur);
+  // ═══ VIEW CADEAU ═══
+  if(sc==='v-cad'&&cur){const ex=isEx(cur);const expSoon=isExpSoon(cur);
     return html`<div>${nav}
-    <div style=${{padding:'0 8px 12px',maxWidth:850,margin:'0 auto'}}>
+    <div style=${{padding:'0 8px 8px',maxWidth:850,margin:'0 auto'}}>
       <div ref=${cr} style=${{position:'relative',borderRadius:6,overflow:'hidden',boxShadow:'0 4px 20px rgba(0,0,0,0.35)'}}>
         <img src="bg-cadeau.jpg" alt="" style=${{width:'100%',display:'block'}} crossorigin="anonymous"/>
-        <!-- POUR value -->
-        <div style=${{position:'absolute',top:'17%',left:'42%',right:'4%',
-          fontFamily:"'Cormorant Garamond',serif",fontSize:'clamp(13px,3.2vw,24px)',
-          fontStyle:'italic',fontWeight:600,color:C.red}}>${cur.pour}</div>
-        <!-- DE LA PART DE value -->
-        <div style=${{position:'absolute',top:'24.5%',left:'51%',right:'4%',
-          fontFamily:"'Cormorant Garamond',serif",fontSize:'clamp(13px,3.2vw,24px)',
-          fontStyle:'italic',fontWeight:600,color:C.red}}>${cur.deLaPart}</div>
-        <!-- VALEUR value -->
-        <div style=${{position:'absolute',top:'32%',left:'42%',right:'3%',
-          fontFamily:"'Cormorant Garamond',serif",fontSize:'clamp(11px,2.8vw,20px)',
-          fontStyle:'italic',fontWeight:600,color:C.red}}>${cur.soin}</div>
-        <!-- JUSQU'AU value -->
-        <div style=${{position:'absolute',top:'39%',left:'45%',right:'8%',
-          fontFamily:"'Cormorant Garamond',serif",fontSize:'clamp(13px,3.2vw,24px)',
-          fontStyle:'italic',fontWeight:600,color:C.red}}>${fmtD(cur.validUntil)}</div>
-        <!-- QR code -->
+        <div style=${{position:'absolute',top:'17%',left:'42%',right:'4%',fontFamily:"'Cormorant Garamond',serif",fontSize:'clamp(13px,3.2vw,24px)',fontStyle:'italic',fontWeight:600,color:C.red}}>${cur.pour}</div>
+        <div style=${{position:'absolute',top:'24.5%',left:'51%',right:'4%',fontFamily:"'Cormorant Garamond',serif",fontSize:'clamp(13px,3.2vw,24px)',fontStyle:'italic',fontWeight:600,color:C.red}}>${cur.deLaPart}</div>
+        <div style=${{position:'absolute',top:'32%',left:'42%',right:'3%',fontFamily:"'Cormorant Garamond',serif",fontSize:'clamp(11px,2.8vw,20px)',fontStyle:'italic',fontWeight:600,color:C.red}}>${cur.soin}</div>
+        <div style=${{position:'absolute',top:'39%',left:'45%',right:'8%',fontFamily:"'Cormorant Garamond',serif",fontSize:'clamp(13px,3.2vw,24px)',fontStyle:'italic',fontWeight:600,color:C.red}}>${fmtD(cur.validUntil)}</div>
         <div style=${{position:'absolute',top:'50%',left:'35%',display:'flex',alignItems:'center',gap:'3%'}}>
           <${QR} data=${cur.id} size=${60}/>
           <span style=${{fontFamily:'monospace',fontSize:'clamp(8px,1.4vw,11px)',color:C.goldDark,fontWeight:700}}>${cur.id}</span></div>
-        <!-- SOIN REALISE stamp -->
-        ${cur.used?html`<div style=${{position:'absolute',top:'40%',left:'60%',transform:'translate(-50%,-50%) rotate(-12deg)',padding:'2% 4%',border:'4px solid #2E7D32',borderRadius:12,background:'rgba(232,245,233,0.93)',textAlign:'center',zIndex:5}}>
+        ${cur.used?html`<div style=${{position:'absolute',top:'38%',left:'60%',transform:'translate(-50%,-50%) rotate(-12deg)',padding:'2% 4%',border:'4px solid #2E7D32',borderRadius:12,background:'rgba(232,245,233,0.93)',textAlign:'center',zIndex:5}}>
           <div style=${{fontSize:'clamp(9px,1.8vw,14px)',letterSpacing:3,textTransform:'uppercase',color:'#2E7D32',fontWeight:700}}>✓ SOIN RÉALISÉ</div>
           <div class="cg" style=${{fontSize:'clamp(14px,3vw,24px)',fontWeight:600,color:'#2E7D32'}}>le ${fmtD(cur.usedDate)}</div></div>`:''}</div></div>
-    <div style=${{padding:'0 18px 6px',textAlign:'center',maxWidth:850,margin:'0 auto'}}>${cur.used?html`<div style=${{fontSize:13,color:'#4CAF50',fontWeight:600,marginBottom:8}}>Soin réalisé — repartager ↓</div>`:''}</div>
-    <div style=${{padding:'0 18px 10px',display:'flex',gap:10,maxWidth:850,margin:'0 auto'}}>
+    ${expSoon&&!cur.used?html`<div style=${{padding:'0 18px 6px',maxWidth:850,margin:'0 auto'}}><div style=${{padding:8,borderRadius:8,background:C.orange+'25',fontSize:13,color:'#FFB366',textAlign:'center',fontWeight:600}}>⚠️ Expire dans ${daysTo(cur.validUntil)} jours</div></div>`:''}
+    <div style=${{padding:'0 18px 6px',textAlign:'center',fontSize:12,color:C.creamDark,maxWidth:850,margin:'0 auto'}}>
+      ${cur.used?html`<span style=${{color:C.green,fontWeight:600}}>Soin réalisé — repartager ↓</span>`:html`<a href=${'tel:'+cur.phone} style=${{color:C.gold}}>${cur.phone}</a>`}</div>
+    <div style=${{padding:'0 18px 16px',display:'flex',gap:10,maxWidth:850,margin:'0 auto'}}>
       <button onClick=${share} disabled=${sh} style=${{...btn,flex:1}}>${sh?'⏳':cur.used?'📤 Renvoyer':'📤 Partager'}</button>
-      ${!cur.used?html`<button onClick=${tU} style=${{padding:'14px 18px',borderRadius:12,cursor:'pointer',fontSize:13,fontWeight:600,border:'none',background:C.gold+'25',color:C.gold}}>Valider soin</button>`:''}</div></div>`}
+      <button onClick=${waOpen} style=${{padding:'14px 20px',borderRadius:12,border:'none',background:'#25D366',color:'#fff',fontSize:18,cursor:'pointer'}}>💬</button>
+      ${!cur.used?html`<button onClick=${tU} style=${{padding:'14px 18px',borderRadius:12,cursor:'pointer',fontSize:13,fontWeight:600,border:'none',background:C.gold+'25',color:C.gold}}>Valider</button>`:''}</div>
+    </div>`}
 
   return html`<div/>`;
 }

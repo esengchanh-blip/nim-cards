@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#9B7BB8">
+<title>Ma carte — Nim Thaï</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400;1,600&family=Raleway:wght@300;400;600&family=Dancing+Script:wght@600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Raleway',sans-serif;min-height:100dvh;background:linear-gradient(135deg,#8668A4,#9B7BB8 50%,#B89FCC);color:#fff;
+  padding-top:env(safe-area-inset-top);padding-bottom:env(safe-area-inset-bottom)}
+.cg{font-family:'Cormorant Garamond',serif}
+.ds{font-family:'Dancing Script',cursive}
+.wrap{max-width:850px;margin:0 auto;padding:16px 8px}
+.card{position:relative;border-radius:6px;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,0.35)}
+.card img.bg{width:100%;display:block}
+.ov{position:absolute;font-family:'Cormorant Garamond',serif;font-style:italic;font-weight:600;color:#C0392B}
+.btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:15px;border-radius:12px;border:none;
+  background:linear-gradient(135deg,#D4AF37,#C9A63D);color:#1a0a2e;font-size:16px;font-weight:600;cursor:pointer;text-decoration:none;margin-top:12px}
+.btn.wa{background:#25D366;color:#fff}
+.info{text-align:center;font-size:13px;color:#F0E6D0;padding:8px}
+.alert{padding:10px;border-radius:10px;background:rgba(230,126,34,0.25);color:#FFB366;font-weight:600;text-align:center;font-size:14px;margin-top:10px}
+.loading{text-align:center;padding:60px 20px;color:#F0E6D0}
+.err{text-align:center;padding:60px 20px}
+</style>
+</head>
+<body>
+<div class="wrap" id="app"><div class="loading">
+  <div class="ds" style="font-size:34px;color:#D4AF37;margin-bottom:12px">Nim Thaï</div>
+  Chargement de votre carte…</div></div>
+<script>
+// ═══ CONFIG — URL du backend Apps Script (à renseigner) ═══
+const API_URL='https://script.google.com/macros/s/AKfycbx3roxkcxG5aa15dh0o1dAUGn6oaaUng0lO1ygvqhcP_okFMC64uYv4gYnEuo3fo0n4/exec';
+const PHONE='0761116665';
+const FRESHA_URL='';// lien Fresha quand publié
+// ═════════════════════════════════════════════════════════
+
+const $=s=>document.querySelector(s);
+const fmtD=d=>d?d.split('-').reverse().join(' / '):'';
+const fmtDS=d=>d?d.slice(5).split('-').reverse().join('/'):'';
+const today=()=>new Date().toISOString().slice(0,10);
+const daysTo=d=>Math.ceil((new Date(d)-new Date())/(1000*3600*24));
+const id=(new URLSearchParams(location.search).get('id')||'').toUpperCase();
+
+const bookBtn=FRESHA_URL
+  ?'<a class="btn" href="'+FRESHA_URL+'" target="_blank">📅 Réserver un soin</a>'
+  :'<a class="btn wa" href="https://wa.me/33'+PHONE.slice(1)+'?text='+encodeURIComponent('Bonjour, je souhaite réserver un soin 🙏')+'">💬 Réserver par WhatsApp</a>'+
+   '<a class="btn" style="background:rgba(255,255,255,0.15);color:#fff" href="tel:'+PHONE+'">📞 07 61 11 66 65</a>';
+
+function qrImg(data,size){return '<img src="https://api.qrserver.com/v1/create-qr-code/?size='+(size*2)+'x'+(size*2)+'&data='+encodeURIComponent(data)+'&margin=3" width="'+size+'" height="'+size+'" style="border-radius:4px;background:#fff;padding:2px"/>'}
+
+function renderAbo(c){
+  const done=c.visits.filter(Boolean).length;const left=5-done;
+  let ovs='';
+  for(let i=0;i<5;i++){
+    if(c.visits[i]){
+      ovs+='<div style="position:absolute;top:28%;left:'+(42+i*10.2)+'%;width:8.5%;padding-bottom:8.5%;border-radius:50%;background:rgba(212,175,55,0.7)"><div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);color:#fff;font-size:clamp(16px,3.5vw,28px);font-weight:700">✓</div></div>';
+      if((c.dates||[])[i])ovs+='<div style="position:absolute;top:45%;left:'+(42+i*10.2)+'%;width:8.5%;text-align:center;font-size:clamp(7px,1.2vw,10px);color:#4a2866;font-weight:600">'+fmtDS(c.dates[i])+'</div>';
+    }
+  }
+  ovs+='<div style="position:absolute;top:55%;left:'+(c.duration==='1h'?'69%':'77%')+';width:clamp(14px,2.5vw,20px);height:clamp(14px,2.5vw,20px);border-radius:50%;background:#C0392B"></div>';
+  ovs+='<div class="ov" style="bottom:5%;left:55%;right:6%;font-size:clamp(14px,3.2vw,26px);color:#4a2866">'+esc(c.name)+'</div>';
+  ovs+='<div style="position:absolute;bottom:32%;left:4%">'+qrImg(c.id,55)+'</div>';
+  if(done===5)ovs+='<div style="position:absolute;top:42%;left:62%;transform:rotate(-15deg);padding:1.5% 4%;border:3px solid #D4AF37;border-radius:10px;background:rgba(212,175,55,0.92);font-family:\'Cormorant Garamond\',serif;font-size:clamp(12px,2.5vw,18px);font-weight:700;color:#1a0a2e;white-space:nowrap;z-index:5">✦ 1 SÉANCE OFFERTE ✦</div>';
+  return '<div class="card"><img class="bg" src="bg-abo.jpg"/>'+ovs+'</div>'+
+    '<div class="info">'+(done===5?'🎉 Carte complète — votre prochaine séance est offerte !':done+'/5 passages · Il vous reste '+left+' séance'+(left>1?'s':''))+'</div>'+bookBtn;
+}
+
+function renderCadeau(c){
+  const ex=c.validUntil<today();const dExp=daysTo(c.validUntil);
+  let ovs='';
+  ovs+='<div class="ov" style="top:17%;left:42%;right:4%;font-size:clamp(13px,3.2vw,24px)">'+esc(c.pour)+'</div>';
+  ovs+='<div class="ov" style="top:24.5%;left:51%;right:4%;font-size:clamp(13px,3.2vw,24px)">'+esc(c.deLaPart)+'</div>';
+  ovs+='<div class="ov" style="top:32%;left:42%;right:3%;font-size:clamp(11px,2.8vw,20px)">'+esc(c.soin)+'</div>';
+  ovs+='<div class="ov" style="top:39%;left:45%;right:8%;font-size:clamp(13px,3.2vw,24px)">'+fmtD(c.validUntil)+'</div>';
+  ovs+='<div style="position:absolute;top:50%;left:35%">'+qrImg(c.id,60)+'</div>';
+  if(c.used)ovs+='<div style="position:absolute;top:38%;left:60%;transform:translate(-50%,-50%) rotate(-12deg);padding:2% 4%;border:4px solid #2E7D32;border-radius:12px;background:rgba(232,245,233,0.93);text-align:center;z-index:5"><div style="font-size:clamp(9px,1.8vw,14px);letter-spacing:3px;text-transform:uppercase;color:#2E7D32;font-weight:700">✓ SOIN RÉALISÉ</div><div class="cg" style="font-size:clamp(14px,3vw,24px);font-weight:600;color:#2E7D32">le '+fmtD(c.usedDate)+'</div></div>';
+  let extra='';
+  if(c.used)extra='<div class="info" style="color:#4CAF50;font-weight:600">Merci de votre visite 🙏</div>';
+  else if(ex)extra='<div class="alert">Ce chèque a expiré le '+fmtD(c.validUntil)+' — contactez-nous</div>';
+  else if(dExp<=30)extra='<div class="alert">⚠️ Valable encore '+dExp+' jour'+(dExp>1?'s':'')+' — réservez vite !</div>';
+  else extra='<div class="info">Valable jusqu\'au '+fmtD(c.validUntil)+'</div>';
+  return '<div class="card"><img class="bg" src="bg-cadeau.jpg"/>'+ovs+'</div>'+extra+bookBtn;
+}
+
+function esc(s){return String(s||'').replace(/[<>&"]/g,c=>({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;'}[c]))}
+
+async function load(){
+  if(!id){$('#app').innerHTML='<div class="err"><div class="ds" style="font-size:30px;color:#D4AF37;margin-bottom:10px">Nim Thaï</div>Aucune carte spécifiée.</div>';return}
+  if(!API_URL){$('#app').innerHTML='<div class="err"><div class="ds" style="font-size:30px;color:#D4AF37;margin-bottom:10px">Nim Thaï</div>Service en cours de configuration.<br/>Revenez bientôt 🙏</div>';return}
+  try{
+    const r=await fetch(API_URL+'?id='+encodeURIComponent(id));
+    const j=await r.json();
+    if(!j.ok){$('#app').innerHTML='<div class="err"><div class="ds" style="font-size:30px;color:#D4AF37;margin-bottom:10px">Nim Thaï</div>Carte introuvable.<br/><span style="font-family:monospace;font-size:12px;color:#F0E6D0">'+esc(id)+'</span></div>';return}
+    const c=j.card;
+    document.title=(c.type==='abo'?'Carte d\'abonnement':'Chèque cadeau')+' — Nim Thaï';
+    $('#app').innerHTML=
+      '<div style="text-align:center;margin-bottom:10px"><div class="ds" style="font-size:28px;font-weight:700;color:#D4AF37">Nim Thaï</div>'+
+      '<div style="font-size:9px;letter-spacing:3px;text-transform:uppercase;color:#F0E6D0">17 rue des Bosquets · Lunéville</div></div>'+
+      (c.type==='abo'?renderAbo(c):renderCadeau(c))+
+      '<div style="text-align:center;margin-top:14px;font-size:11px;color:rgba(240,230,208,0.6)">Carte mise à jour en temps réel · '+esc(c.id)+'</div>';
+  }catch(e){
+    $('#app').innerHTML='<div class="err">Connexion impossible.<br/>Vérifiez votre réseau puis rechargez.</div>';
+  }
+}
+load();
+</script>
+</body>
+</html>
