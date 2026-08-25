@@ -140,7 +140,7 @@ function App(){
           ${cur.visits[i]?html`<div style=${{position:'absolute',top:'50%',left:'50%',transform:'translate(-50%,-50%)',
             color:'#fff',fontSize:'clamp(16px,3.5vw,28px)',fontWeight:700}}>✓</div>`:''}</div>`)}
         <!-- Duration red dot - aligned with checkboxes -->
-        <div style=${{position:'absolute',top:'39.5%',left:cur.duration==='1h'?'59.5%':'68%',
+        <div style=${{position:'absolute',top:'55%',left:cur.duration==='1h'?'57%':'65%',
           width:'clamp(12px,2.2vw,18px)',height:'clamp(12px,2.2vw,18px)',borderRadius:'50%',background:C.red}}></div>
         <!-- Name after "Nom :" on the dotted line -->
         <div style=${{position:'absolute',bottom:'5%',left:'55%',right:'6%',
@@ -167,23 +167,23 @@ function App(){
       <div ref=${cr} style=${{position:'relative',borderRadius:6,overflow:'hidden',boxShadow:'0 4px 20px rgba(0,0,0,0.35)'}}>
         <img src="bg-cadeau.jpg" alt="" style=${{width:'100%',display:'block'}} crossorigin="anonymous"/>
         <!-- POUR value -->
-        <div style=${{position:'absolute',top:'22%',left:'35%',right:'4%',
+        <div style=${{position:'absolute',top:'19%',left:'35%',right:'4%',
           fontFamily:"'Cormorant Garamond',serif",fontSize:'clamp(13px,3.2vw,24px)',
           fontStyle:'italic',fontWeight:600,color:C.red}}>${cur.pour}</div>
         <!-- DE LA PART DE value -->
-        <div style=${{position:'absolute',top:'37%',left:'44%',right:'4%',
+        <div style=${{position:'absolute',top:'28%',left:'44%',right:'4%',
           fontFamily:"'Cormorant Garamond',serif",fontSize:'clamp(13px,3.2vw,24px)',
           fontStyle:'italic',fontWeight:600,color:C.red}}>${cur.deLaPart}</div>
         <!-- VALEUR value -->
-        <div style=${{position:'absolute',top:'52%',left:'34%',right:'3%',
+        <div style=${{position:'absolute',top:'37%',left:'34%',right:'3%',
           fontFamily:"'Cormorant Garamond',serif",fontSize:'clamp(11px,2.8vw,20px)',
           fontStyle:'italic',fontWeight:600,color:C.red}}>${cur.soin}</div>
         <!-- JUSQU'AU value -->
-        <div style=${{position:'absolute',top:'66%',left:'38%',right:'8%',
+        <div style=${{position:'absolute',top:'46%',left:'38%',right:'8%',
           fontFamily:"'Cormorant Garamond',serif",fontSize:'clamp(13px,3.2vw,24px)',
           fontStyle:'italic',fontWeight:600,color:C.red}}>${fmtD(cur.validUntil)}</div>
-        <!-- QR code below JUSQU'AU -->
-        <div style=${{position:'absolute',top:'76%',left:'35%',display:'flex',alignItems:'center',gap:'3%'}}>
+        <!-- QR code -->
+        <div style=${{position:'absolute',top:'58%',left:'35%',display:'flex',alignItems:'center',gap:'3%'}}>
           <${QR} data=${cur.id} size=${45}/>
           <span style=${{fontFamily:'monospace',fontSize:'clamp(8px,1.4vw,11px)',color:C.goldDark,fontWeight:700}}>${cur.id}</span></div>
         <!-- SOIN REALISE stamp -->
