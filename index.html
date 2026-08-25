@@ -129,7 +129,7 @@ function App(){
   // ═══════════════════════════════════════
   if(sc==='v-abo'&&cur){const co=isCo(cur);
     return html`<div>${nav}
-    <div style=${{padding:'0 8px 12px',maxWidth:600,margin:'0 auto'}}>
+    <div style=${{padding:'0 8px 12px',maxWidth:850,margin:'0 auto'}}>
       <div ref=${cr} style=${{position:'relative',borderRadius:6,overflow:'hidden',boxShadow:'0 4px 20px rgba(0,0,0,0.35)'}}>
         <img src="bg-abo.jpg" alt="" style=${{width:'100%',display:'block'}} crossorigin="anonymous"/>
         <!-- 5 stamp overlays on circles -->
@@ -155,15 +155,15 @@ function App(){
           padding:'1.5% 4%',border:'3px solid '+C.gold,borderRadius:10,background:'rgba(212,175,55,0.92)',
           fontFamily:"'Cormorant Garamond',serif",fontSize:'clamp(12px,2.5vw,18px)',fontWeight:700,color:'#1a0a2e',
           whiteSpace:'nowrap',zIndex:5}}>✦ 1 SÉANCE OFFERTE ✦</div>`:''}</div></div>
-    <div style=${{padding:'6px 18px 8px',textAlign:'center',fontSize:12,color:C.creamDark,maxWidth:600,margin:'0 auto'}}>${sC(cur)}/5 · ${cur.duration} · ${cur.id}</div>
-    <div style=${{padding:'0 18px 20px',maxWidth:600,margin:'0 auto'}}><button onClick=${share} disabled=${sh} style=${{...btn,background:sh?C.gold+'50':btn.background}}>${sh?'⏳':'📤 Partager la carte'}</button></div></div>`}
+    <div style=${{padding:'6px 18px 8px',textAlign:'center',fontSize:12,color:C.creamDark,maxWidth:850,margin:'0 auto'}}>${sC(cur)}/5 · ${cur.duration} · ${cur.id}</div>
+    <div style=${{padding:'0 18px 20px',maxWidth:850,margin:'0 auto'}}><button onClick=${share} disabled=${sh} style=${{...btn,background:sh?C.gold+'50':btn.background}}>${sh?'⏳':'📤 Partager la carte'}</button></div></div>`}
 
   // ═══════════════════════════════════════
   // CHÈQUE CADEAU — design fidèle
   // ═══════════════════════════════════════
   if(sc==='v-cad'&&cur){const ex=isEx(cur);
     return html`<div>${nav}
-    <div style=${{padding:'0 8px 12px',maxWidth:600,margin:'0 auto'}}>
+    <div style=${{padding:'0 8px 12px',maxWidth:850,margin:'0 auto'}}>
       <div ref=${cr} style=${{position:'relative',borderRadius:6,overflow:'hidden',boxShadow:'0 4px 20px rgba(0,0,0,0.35)'}}>
         <img src="bg-cadeau.jpg" alt="" style=${{width:'100%',display:'block'}} crossorigin="anonymous"/>
         <!-- POUR value -->
@@ -190,8 +190,8 @@ function App(){
         ${cur.used?html`<div style=${{position:'absolute',top:'40%',left:'60%',transform:'translate(-50%,-50%) rotate(-12deg)',padding:'2% 4%',border:'4px solid #2E7D32',borderRadius:12,background:'rgba(232,245,233,0.93)',textAlign:'center',zIndex:5}}>
           <div style=${{fontSize:'clamp(9px,1.8vw,14px)',letterSpacing:3,textTransform:'uppercase',color:'#2E7D32',fontWeight:700}}>✓ SOIN RÉALISÉ</div>
           <div class="cg" style=${{fontSize:'clamp(14px,3vw,24px)',fontWeight:600,color:'#2E7D32'}}>le ${fmtD(cur.usedDate)}</div></div>`:''}</div></div>
-    <div style=${{padding:'0 18px 6px',textAlign:'center',maxWidth:600,margin:'0 auto'}}>${cur.used?html`<div style=${{fontSize:13,color:'#4CAF50',fontWeight:600,marginBottom:8}}>Soin réalisé — repartager ↓</div>`:''}</div>
-    <div style=${{padding:'0 18px 10px',display:'flex',gap:10,maxWidth:600,margin:'0 auto'}}>
+    <div style=${{padding:'0 18px 6px',textAlign:'center',maxWidth:850,margin:'0 auto'}}>${cur.used?html`<div style=${{fontSize:13,color:'#4CAF50',fontWeight:600,marginBottom:8}}>Soin réalisé — repartager ↓</div>`:''}</div>
+    <div style=${{padding:'0 18px 10px',display:'flex',gap:10,maxWidth:850,margin:'0 auto'}}>
       <button onClick=${share} disabled=${sh} style=${{...btn,flex:1}}>${sh?'⏳':cur.used?'📤 Renvoyer':'📤 Partager'}</button>
       ${!cur.used?html`<button onClick=${tU} style=${{padding:'14px 18px',borderRadius:12,cursor:'pointer',fontSize:13,fontWeight:600,border:'none',background:C.gold+'25',color:C.gold}}>Valider soin</button>`:''}</div></div>`}
 
