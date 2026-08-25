@@ -17,11 +17,10 @@ if('serviceWorker' in navigator){navigator.serviceWorker.register('sw.js',{scope
 </script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
-body{font-family:'Raleway',sans-serif;min-height:100dvh;
-  background:linear-gradient(135deg,#8668A4,#9B7BB8 50%,#B89FCC);
-  color:#fff;-webkit-tap-highlight-color:transparent;
-  padding-top:env(safe-area-inset-top);padding-bottom:env(safe-area-inset-bottom)}
+body{font-family:'Raleway',sans-serif;min-height:100dvh;background:linear-gradient(135deg,#8668A4,#9B7BB8 50%,#B89FCC);color:#fff;-webkit-tap-highlight-color:transparent;padding-top:env(safe-area-inset-top);padding-bottom:env(safe-area-inset-bottom)}
 input,select,button{font-family:inherit}
+.cg{font-family:'Cormorant Garamond',serif}
+.ds{font-family:'Dancing Script',cursive}
 </style>
 </head>
 <body>
@@ -32,250 +31,206 @@ import{useState,useEffect,useRef}from'https://esm.sh/preact@10.24.3/hooks';
 import htm from'https://esm.sh/htm@3.1.1';
 const html=htm.bind(h);
 
-const C={mauve:'#9B7BB8',mauveDark:'#8668A4',mauveLight:'#B89FCC',gold:'#D4AF37',goldDark:'#C9A63D',
-  red:'#C0392B',white:'#FFFFFF',cream:'#FFF8E7',creamDark:'#F0E6D0',magenta:'#B6007D'};
-const SOINS=["Massage thaï traditionnel — 60 min","Massage thaï traditionnel — 90 min",
-  "Réflexologie plantaire — 60 min","Massage dos — 30 min","Massage pieds — 30 min",
-  "Rituel Sérénité","Rituel Évasion","Rituel Harmonie",
-  "Carnet Découverte (3 séances)","Carnet Fidèle (5 séances)","Pass Signature (10 séances)","Pass Duo Sérénité"];
+const C={mauve:'#9B7BB8',mauveDark:'#7B5B98',mauveLight:'#B89FCC',gold:'#D4AF37',goldDark:'#C9A63D',red:'#C0392B',white:'#FFF',cream:'#FFF8E7',creamDark:'#F0E6D0',magenta:'#B6007D'};
+const SOINS=["Massage thaï traditionnel — 60 min","Massage thaï traditionnel — 90 min","Réflexologie plantaire — 60 min","Massage dos — 30 min","Massage pieds — 30 min","Rituel Sérénité","Rituel Évasion","Rituel Harmonie","Carnet Découverte (3 séances)","Carnet Fidèle (5 séances)","Pass Signature (10 séances)","Pass Duo Sérénité"];
 const genId=p=>p+'-'+Math.random().toString(36).substring(2,6).toUpperCase();
-const addMonths=(d,n)=>{const x=new Date(d);x.setMonth(x.getMonth()+n);return x.toISOString().slice(0,10)};
-const fmtDate=d=>d?d.split('-').reverse().join(' / '):'';
-const phoneClean=p=>(p||'').replace(/[\s.\-]/g,'');
-const LS_KEY='nim-items-v3';
-function lsLoad(){try{return JSON.parse(localStorage.getItem(LS_KEY)||'[]')}catch{return[]}}
-function lsSave(d){localStorage.setItem(LS_KEY,JSON.stringify(d))}
-async function scanQR(file){try{const bm=await createImageBitmap(file);
-  if('BarcodeDetector' in window){const d=new BarcodeDetector({formats:['qr_code']});
-  const r=await d.detect(bm);if(r.length>0)return r[0].rawValue}}catch{}return null}
-function loadH2C(){return new Promise((ok,no)=>{if(window.html2canvas){ok(window.html2canvas);return}
-  const s=document.createElement('script');s.src='https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';
-  s.onload=()=>ok(window.html2canvas);s.onerror=no;document.head.appendChild(s)})}
-function QR({data,size=50}){const[ok,setOk]=useState(true);
-  const url='https://api.qrserver.com/v1/create-qr-code/?size='+size*2+'x'+size*2+'&data='+encodeURIComponent(data)+'&margin=3&format=png';
-  if(!ok)return html`<div style=${{width:size,height:size,background:'#fff',borderRadius:4,display:'flex',alignItems:'center',justifyContent:'center',fontFamily:'monospace',fontSize:8,color:'#333'}}>${data}</div>`;
+const addM=(d,n)=>{const x=new Date(d);x.setMonth(x.getMonth()+n);return x.toISOString().slice(0,10)};
+const fmtD=d=>d?d.split('-').reverse().join(' / '):'';
+const pClean=p=>(p||'').replace(/[\s.\-]/g,'');
+const LS='nim-items-v3';
+const lsL=()=>{try{return JSON.parse(localStorage.getItem(LS)||'[]')}catch{return[]}};
+const lsS=d=>localStorage.setItem(LS,JSON.stringify(d));
+async function scanQR(f){try{const b=await createImageBitmap(f);if('BarcodeDetector' in window){const d=new BarcodeDetector({formats:['qr_code']});const r=await d.detect(b);if(r.length>0)return r[0].rawValue}}catch{}return null}
+function loadH2C(){return new Promise((ok,no)=>{if(window.html2canvas){ok(window.html2canvas);return}const s=document.createElement('script');s.src='https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';s.onload=()=>ok(window.html2canvas);s.onerror=no;document.head.appendChild(s)})}
+function QR({data,size=60}){const[ok,setOk]=useState(true);const url='https://api.qrserver.com/v1/create-qr-code/?size='+size*2+'x'+size*2+'&data='+encodeURIComponent(data)+'&margin=3&format=png';
+  if(!ok)return html`<div style=${{width:size,height:size,background:'#fff',borderRadius:4,display:'flex',alignItems:'center',justifyContent:'center',fontFamily:'monospace',fontSize:9,color:'#333'}}>${data}</div>`;
   return html`<img src=${url} width=${size} height=${size} crossorigin="anonymous" style=${{borderRadius:4,background:'#fff',padding:2}} onError=${()=>setOk(false)}/>`;
 }
 
 function App(){
-  const[screen,setScreen]=useState('home');
+  const[sc,setSc]=useState('home');
   const[items,setItems]=useState([]);
-  const[current,setCurrent]=useState(null);
-  const[loading,setLoading]=useState(true);
-  const[sharing,setSharing]=useState(false);
+  const[cur,setCur]=useState(null);
+  const[ld,setLd]=useState(true);
+  const[sh,setSh]=useState(false);
   const[search,setSearch]=useState('');
-  const[scanMsg,setScanMsg]=useState('');
-  const[clientPhone,setClientPhone]=useState('');
-  const[clientName,setClientName]=useState('');
-  const[foundClient,setFoundClient]=useState(null);
+  const[sm,setSm]=useState('');
+  const[cP,setCP]=useState('');const[cN,setCN]=useState('');const[fC,setFC]=useState(null);
   const[dur,setDur]=useState('1h');
-  const[cPour,setCPour]=useState('');
-  const[cDeLaPart,setCDeLaPart]=useState('');
-  const[cSoin,setCSoin]=useState(SOINS[0]);
-  const cardRef=useRef(null);const scanRef=useRef(null);const importRef=useRef(null);
+  const[gP,setGP]=useState('');const[gD,setGD]=useState('');const[gS,setGS]=useState(SOINS[0]);
+  const cr=useRef(null);const sr=useRef(null);const ir=useRef(null);
 
-  useEffect(()=>{setItems(lsLoad());setLoading(false)},[]);
-  const save=async a=>{setItems(a);lsSave(a)};
-  const findByPhone=p=>{const cl=phoneClean(p);if(cl.length<4)return null;
-    const f=items.find(i=>phoneClean(i.phone)===cl||phoneClean(i.phone).endsWith(cl));
-    return f?{name:f.name,phone:f.phone}:null};
-  const createAbo=async()=>{const item={type:'abo',id:genId('NIM'),name:clientName,phone:phoneClean(clientPhone),
-    duration:dur,visits:[false,false,false,false,false],dates:[null,null,null,null,null],created:new Date().toISOString()};
-    await save([item,...items]);setCurrent(item);setScreen('view-abo')};
-  const createCadeau=async()=>{const now=new Date().toISOString();
-    const item={type:'cadeau',id:genId('CDO'),name:clientName,phone:phoneClean(clientPhone),
-    pour:cPour,deLaPart:cDeLaPart,soin:cSoin,validUntil:addMonths(now,6),created:now,used:false,usedDate:null};
-    await save([item,...items]);setCurrent(item);setScreen('view-cadeau')};
-  const toggleVisit=async i=>{const u=items.map(c=>{if(c.id!==current.id)return c;
-    const v=[...c.visits],d=[...(c.dates||[null,null,null,null,null])];v[i]=!v[i];d[i]=v[i]?new Date().toISOString().slice(0,10):null;
-    return{...c,visits:v,dates:d}});await save(u);setCurrent(u.find(c=>c.id===current.id))};
-  const toggleUsed=async()=>{const u=items.map(c=>c.id!==current.id?c:
-    {...c,used:!c.used,usedDate:!c.used?new Date().toISOString().slice(0,10):null});
-    await save(u);setCurrent(u.find(c=>c.id===current.id))};
-  const deleteItem=async id=>{await save(items.filter(c=>c.id!==id));setScreen('home')};
-  const openItem=item=>{setCurrent(item);setScreen(item.type==='abo'?'view-abo':'view-cadeau')};
-  const shareCard=async()=>{if(!cardRef.current)return;setSharing(true);
-    try{const h2c=await loadH2C();const cv=await h2c(cardRef.current,{backgroundColor:null,scale:2,useCORS:true,logging:false});
-    const blob=await new Promise(r=>cv.toBlob(r,'image/png'));const file=new File([blob],current.id+'.png',{type:'image/png'});
-    if(navigator.canShare&&navigator.canShare({files:[file]}))await navigator.share({files:[file],title:current.id});
-    else{const u=URL.createObjectURL(blob);const a=document.createElement('a');a.href=u;a.download=file.name;a.click();URL.revokeObjectURL(u)}}
-    catch(e){if(e.name!=='AbortError')alert('Erreur: '+e.message)}setSharing(false)};
-  const handleScan=async e=>{const file=e.target.files?.[0];if(!file)return;setScanMsg('Analyse…');
-    const result=await scanQR(file);if(result){const found=items.find(c=>c.id===result);
-    if(found){setScanMsg('');if(found.type==='cadeau'&&!found.used){const today=new Date().toISOString().slice(0,10);
-      const u=items.map(c=>c.id===found.id?{...c,used:true,usedDate:today}:c);await save(u);
-      setCurrent(u.find(c=>c.id===found.id));setScreen('view-cadeau')}else{openItem(found)}e.target.value='';return}
-    setScanMsg('"'+result+'" — non trouvé')}else{setScanMsg('QR non détecté')}e.target.value='';setTimeout(()=>setScanMsg(''),3500)};
-  const stampCount=c=>c.visits.filter(Boolean).length;
-  const isComplete=c=>c.type==='abo'&&stampCount(c)===5;
-  const isExpired=c=>c.type==='cadeau'&&c.validUntil<new Date().toISOString().slice(0,10);
-  const startNew=()=>{setClientPhone('');setClientName('');setFoundClient(null);setDur('1h');setCPour('');setCDeLaPart('');setCSoin(SOINS[0]);setScreen('identify')};
-  const filtered=search?items.filter(i=>(i.name||'').toLowerCase().includes(search.toLowerCase())||i.id.toLowerCase().includes(search.toLowerCase())||phoneClean(i.phone).includes(phoneClean(search))||(i.pour||'').toLowerCase().includes(search.toLowerCase())):items;
+  useEffect(()=>{setItems(lsL());setLd(false)},[]);
+  const sv=async a=>{setItems(a);lsS(a)};
+  const fBP=p=>{const cl=pClean(p);if(cl.length<4)return null;const f=items.find(i=>pClean(i.phone)===cl||pClean(i.phone).endsWith(cl));return f?{name:f.name,phone:f.phone}:null};
+  const mkAbo=async()=>{const it={type:'abo',id:genId('NIM'),name:cN,phone:pClean(cP),duration:dur,visits:[false,false,false,false,false],dates:[null,null,null,null,null],created:new Date().toISOString()};await sv([it,...items]);setCur(it);setSc('v-abo')};
+  const mkCad=async()=>{const n=new Date().toISOString();const it={type:'cadeau',id:genId('CDO'),name:cN,phone:pClean(cP),pour:gP,deLaPart:gD,soin:gS,validUntil:addM(n,6),created:n,used:false,usedDate:null};await sv([it,...items]);setCur(it);setSc('v-cad')};
+  const tV=async i=>{const u=items.map(c=>{if(c.id!==cur.id)return c;const v=[...c.visits],d=[...(c.dates||[null,null,null,null,null])];v[i]=!v[i];d[i]=v[i]?new Date().toISOString().slice(0,10):null;return{...c,visits:v,dates:d}});await sv(u);setCur(u.find(c=>c.id===cur.id))};
+  const tU=async()=>{const u=items.map(c=>c.id!==cur.id?c:{...c,used:!c.used,usedDate:!c.used?new Date().toISOString().slice(0,10):null});await sv(u);setCur(u.find(c=>c.id===cur.id))};
+  const del=async id=>{await sv(items.filter(c=>c.id!==id));setSc('home')};
+  const open=it=>{setCur(it);setSc(it.type==='abo'?'v-abo':'v-cad')};
+  const share=async()=>{if(!cr.current)return;setSh(true);try{const h=await loadH2C();const cv=await h(cr.current,{backgroundColor:null,scale:2,useCORS:true,logging:false});const bl=await new Promise(r=>cv.toBlob(r,'image/png'));const f=new File([bl],cur.id+'.png',{type:'image/png'});if(navigator.canShare&&navigator.canShare({files:[f]}))await navigator.share({files:[f],title:cur.id});else{const u=URL.createObjectURL(bl);const a=document.createElement('a');a.href=u;a.download=f.name;a.click();URL.revokeObjectURL(u)}}catch(e){if(e.name!=='AbortError')alert('Erreur: '+e.message)}setSh(false)};
+  const hScan=async e=>{const f=e.target.files?.[0];if(!f)return;setSm('Analyse…');const r=await scanQR(f);if(r){const fd=items.find(c=>c.id===r);if(fd){setSm('');if(fd.type==='cadeau'&&!fd.used){const t=new Date().toISOString().slice(0,10);const u=items.map(c=>c.id===fd.id?{...c,used:true,usedDate:t}:c);await sv(u);setCur(u.find(c=>c.id===fd.id));setSc('v-cad')}else{open(fd)}e.target.value='';return}setSm('"'+r+'" — non trouvé')}else{setSm('QR non détecté')}e.target.value='';setTimeout(()=>setSm(''),3500)};
+  const sC=c=>c.visits.filter(Boolean).length;
+  const isCo=c=>c.type==='abo'&&sC(c)===5;
+  const isEx=c=>c.type==='cadeau'&&c.validUntil<new Date().toISOString().slice(0,10);
+  const startN=()=>{setCP('');setCN('');setFC(null);setDur('1h');setGP('');setGD('');setGS(SOINS[0]);setSc('id')};
+  const fil=search?items.filter(i=>(i.name||'').toLowerCase().includes(search.toLowerCase())||i.id.toLowerCase().includes(search.toLowerCase())||pClean(i.phone).includes(pClean(search))||(i.pour||'').toLowerCase().includes(search.toLowerCase())):items;
 
-  const sBtn={width:'100%',padding:'14px',borderRadius:12,border:'none',background:'linear-gradient(135deg,'+C.gold+','+C.goldDark+')',color:'#1a0a2e',fontSize:15,fontWeight:600,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',gap:8};
-  const sInput={width:'100%',padding:'12px 14px',borderRadius:10,border:'2px solid '+C.gold+'50',background:C.white+'10',color:C.white,fontSize:17,outline:'none',boxSizing:'border-box',textAlign:'center'};
-  const navBar=html`<div style=${{padding:'10px 16px 6px',display:'flex',justifyContent:'space-between'}}>
-    <button onClick=${()=>setScreen('home')} style=${{background:'rgba(0,0,0,0.3)',border:'none',color:'#fff',fontSize:13,cursor:'pointer',padding:'6px 14px',borderRadius:8}}>← Accueil</button>
-    <button onClick=${()=>{if(confirm('Supprimer ?'))deleteItem(current.id)}} style=${{background:'rgba(192,57,43,0.3)',border:'none',color:'#fcc',fontSize:12,cursor:'pointer',padding:'6px 12px',borderRadius:8}}>Supprimer</button></div>`;
+  const btn={width:'100%',padding:'14px',borderRadius:12,border:'none',background:'linear-gradient(135deg,'+C.gold+','+C.goldDark+')',color:'#1a0a2e',fontSize:15,fontWeight:600,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',gap:8};
+  const inp={width:'100%',padding:'12px 14px',borderRadius:10,border:'2px solid '+C.gold+'50',background:C.white+'10',color:C.white,fontSize:17,outline:'none',boxSizing:'border-box',textAlign:'center'};
+  const nav=html`<div style=${{padding:'10px 16px 6px',display:'flex',justifyContent:'space-between'}}><button onClick=${()=>setSc('home')} style=${{background:'rgba(0,0,0,0.35)',border:'none',color:'#fff',fontSize:13,cursor:'pointer',padding:'7px 16px',borderRadius:8,fontWeight:600}}>← Accueil</button><button onClick=${()=>{if(confirm('Supprimer ?'))del(cur.id)}} style=${{background:'rgba(192,57,43,0.35)',border:'none',color:'#fdd',fontSize:12,cursor:'pointer',padding:'7px 14px',borderRadius:8}}>Supprimer</button></div>`;
 
   // ═══ HOME ═══
-  if(screen==='home'){return html`<div>
-    <div style=${{padding:'28px 20px 12px',textAlign:'center'}}><div style=${{fontFamily:"'Dancing Script',cursive",fontSize:32,fontWeight:700,color:C.gold}}>Nim Thaï</div>
-      <div style=${{fontSize:10,letterSpacing:4,textTransform:'uppercase',color:C.creamDark,marginTop:2}}>Gestion clients</div></div>
-    <div style=${{padding:'0 20px 10px'}}><input value=${search} onInput=${e=>setSearch(e.target.value)} placeholder="Nom, téléphone ou ID…" style=${{...sInput,fontSize:14,border:'1px solid '+C.gold+'30'}}/></div>
-    <div style=${{padding:'0 20px 14px',display:'flex',gap:10}}>
-      <button onClick=${startNew} style=${{...sBtn,flex:1}}>+ Nouveau</button>
-      <button onClick=${()=>scanRef.current?.click()} style=${{padding:'14px 18px',borderRadius:12,background:C.white+'15',border:'1px solid '+C.gold+'50',color:C.gold,fontSize:20,cursor:'pointer'}}>📷</button>
-      <input ref=${scanRef} type="file" accept="image/*" capture="environment" onChange=${handleScan} style=${{display:'none'}}/></div>
-    ${scanMsg&&html`<div style=${{padding:'0 20px 10px'}}><div style=${{padding:10,borderRadius:10,background:C.white+'12',fontSize:13,color:C.cream,textAlign:'center'}}>${scanMsg}</div></div>`}
-    ${loading?html`<div style=${{textAlign:'center',padding:40,color:C.creamDark}}>Chargement…</div>`:html`<div style=${{padding:'0 20px'}}>
-      ${filtered.length===0&&html`<div style=${{textAlign:'center',padding:30,color:C.creamDark,fontSize:14}}>${search?'Aucun résultat':'Aucun client'}</div>`}
-      ${filtered.map(item=>html`<div key=${item.id} onClick=${()=>openItem(item)} style=${{background:C.white+'10',borderRadius:14,padding:'12px 14px',marginBottom:8,cursor:'pointer',border:'1px solid '+C.gold+'25',opacity:(item.used||isComplete(item))?0.55:1,display:'flex',justifyContent:'space-between',alignItems:'center'}}>
-        <div style=${{minWidth:0}}><div style=${{fontSize:15,fontWeight:600,display:'flex',alignItems:'center',gap:8}}>
-          <span style=${{fontSize:11,padding:'2px 7px',borderRadius:6,background:item.type==='abo'?C.gold+'30':C.magenta+'30',color:item.type==='abo'?C.gold:C.magenta}}>${item.type==='abo'?'ABO':'CADEAU'}</span>
-          ${item.type==='cadeau'?item.pour:item.name}</div><div style=${{fontSize:11,color:C.creamDark,marginTop:3}}>${item.id} · ${item.phone}</div></div>
-        ${item.type==='abo'?html`<div style=${{display:'flex',gap:3,flexShrink:0}}>${item.visits.map(v=>html`<div style=${{width:12,height:12,borderRadius:'50%',border:'2px solid '+C.gold,background:v?C.gold:'transparent'}}/>`)}</div>`
-        :html`<div style=${{fontSize:11,flexShrink:0,fontWeight:600,color:item.used?'#4CAF50':isExpired(item)?C.red:C.creamDark}}>${item.used?'✓ Utilisé':isExpired(item)?'Expiré':'→ '+fmtDate(item.validUntil)}</div>`}
-      </div>`)}
-    </div>`}
+  if(sc==='home'){return html`<div>
+    <div style=${{padding:'28px 20px 12px',textAlign:'center'}}><div class="ds" style=${{fontSize:32,fontWeight:700,color:C.gold}}>Nim Thaï</div><div style=${{fontSize:10,letterSpacing:4,textTransform:'uppercase',color:C.creamDark,marginTop:2}}>Gestion clients</div></div>
+    <div style=${{padding:'0 20px 10px'}}><input value=${search} onInput=${e=>setSearch(e.target.value)} placeholder="Nom, téléphone ou ID…" style=${{...inp,fontSize:14,border:'1px solid '+C.gold+'30'}}/></div>
+    <div style=${{padding:'0 20px 14px',display:'flex',gap:10}}><button onClick=${startN} style=${{...btn,flex:1}}>+ Nouveau</button>
+      <button onClick=${()=>sr.current?.click()} style=${{padding:'14px 18px',borderRadius:12,background:C.white+'15',border:'1px solid '+C.gold+'50',color:C.gold,fontSize:20,cursor:'pointer'}}>📷</button>
+      <input ref=${sr} type="file" accept="image/*" capture="environment" onChange=${hScan} style=${{display:'none'}}/></div>
+    ${sm&&html`<div style=${{padding:'0 20px 10px'}}><div style=${{padding:10,borderRadius:10,background:C.white+'12',fontSize:13,color:C.cream,textAlign:'center'}}>${sm}</div></div>`}
+    <div style=${{padding:'0 20px'}}>${ld?html`<div style=${{textAlign:'center',padding:40,color:C.creamDark}}>…</div>`:fil.length===0?html`<div style=${{textAlign:'center',padding:30,color:C.creamDark,fontSize:14}}>${search?'Aucun résultat':'Aucun client'}</div>`:fil.map(it=>html`<div key=${it.id} onClick=${()=>open(it)} style=${{background:C.white+'10',borderRadius:14,padding:'12px 14px',marginBottom:8,cursor:'pointer',border:'1px solid '+C.gold+'25',opacity:(it.used||isCo(it))?0.55:1,display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+      <div><div style=${{fontSize:15,fontWeight:600,display:'flex',alignItems:'center',gap:8}}><span style=${{fontSize:10,padding:'2px 7px',borderRadius:6,background:it.type==='abo'?C.gold+'30':C.magenta+'30',color:it.type==='abo'?C.gold:C.magenta}}>${it.type==='abo'?'ABO':'CADEAU'}</span>${it.type==='cadeau'?it.pour:it.name}</div><div style=${{fontSize:11,color:C.creamDark,marginTop:3}}>${it.id} · ${it.phone}</div></div>
+      ${it.type==='abo'?html`<div style=${{display:'flex',gap:3}}>${it.visits.map(v=>html`<div style=${{width:12,height:12,borderRadius:'50%',border:'2px solid '+C.gold,background:v?C.gold:'transparent'}}/>`)}</div>`:html`<div style=${{fontSize:11,fontWeight:600,color:it.used?'#4CAF50':isEx(it)?C.red:C.creamDark}}>${it.used?'✓':isEx(it)?'Exp.':'→'+fmtD(it.validUntil)}</div>`}</div>`)}</div>
     ${items.length>0&&html`<div style=${{padding:'16px 20px 0',display:'flex',gap:8}}>
-      <button onClick=${()=>{const b=new Blob([JSON.stringify(items,null,2)],{type:'application/json'});const u=URL.createObjectURL(b);const a=document.createElement('a');a.href=u;a.download='nim-backup-'+new Date().toISOString().slice(0,10)+'.json';a.click();URL.revokeObjectURL(u)}}
-        style=${{flex:1,padding:'10px',borderRadius:10,background:C.white+'10',border:'1px solid '+C.gold+'25',color:C.creamDark,fontSize:12,cursor:'pointer'}}>💾 Exporter</button>
-      <button onClick=${()=>importRef.current?.click()} style=${{flex:1,padding:'10px',borderRadius:10,background:C.white+'10',border:'1px solid '+C.gold+'25',color:C.creamDark,fontSize:12,cursor:'pointer'}}>📂 Importer</button>
-      <input ref=${importRef} type="file" accept=".json" onChange=${async e=>{const f=e.target.files?.[0];if(!f)return;try{const t=await f.text();const d=JSON.parse(t);if(Array.isArray(d)){await save(d);alert('✅ '+d.length+' cartes restaurées')}else{alert('Invalide')}}catch{alert('Erreur')}e.target.value=''}} style=${{display:'none'}}/></div>`}
+      <button onClick=${()=>{const b=new Blob([JSON.stringify(items,null,2)],{type:'application/json'});const u=URL.createObjectURL(b);const a=document.createElement('a');a.href=u;a.download='nim-backup.json';a.click();URL.revokeObjectURL(u)}} style=${{flex:1,padding:10,borderRadius:10,background:C.white+'10',border:'1px solid '+C.gold+'25',color:C.creamDark,fontSize:12,cursor:'pointer'}}>💾 Exporter</button>
+      <button onClick=${()=>ir.current?.click()} style=${{flex:1,padding:10,borderRadius:10,background:C.white+'10',border:'1px solid '+C.gold+'25',color:C.creamDark,fontSize:12,cursor:'pointer'}}>📂 Importer</button>
+      <input ref=${ir} type="file" accept=".json" onChange=${async e=>{const f=e.target.files?.[0];if(!f)return;try{const t=await f.text();const d=JSON.parse(t);if(Array.isArray(d)){await sv(d);alert('✅ '+d.length+' restaurées')}else alert('Invalide')}catch{alert('Erreur')}e.target.value=''}} style=${{display:'none'}}/></div>`}
     <div style=${{height:40}}/></div>`}
 
-  // ═══ IDENTIFY ═══
-  if(screen==='identify'){const hp=v=>{setClientPhone(v);const f=findByPhone(v);setFoundClient(f);if(f)setClientName(f.name)};
-    const ok=phoneClean(clientPhone).length>=6&&clientName.trim().length>=2;
-    return html`<div>
-      <div style=${{padding:'20px'}}><button onClick=${()=>setScreen('home')} style=${{background:'rgba(0,0,0,0.3)',border:'none',color:'#fff',fontSize:13,cursor:'pointer',padding:'6px 14px',borderRadius:8}}>← Retour</button></div>
-      <div style=${{padding:'0 24px',textAlign:'center'}}>
-        <div style=${{fontFamily:"'Cormorant Garamond',serif",fontSize:24,color:C.gold,fontWeight:600,marginBottom:24}}>Identification client</div>
-        <div style=${{marginBottom:18}}><label style=${{fontSize:11,letterSpacing:2,textTransform:'uppercase',color:C.creamDark,display:'block',marginBottom:6}}>Téléphone</label>
-          <input value=${clientPhone} onInput=${e=>hp(e.target.value)} placeholder="06 12 34 56 78" type="tel" autofocus style=${{...sInput,letterSpacing:2}}/></div>
-        ${foundClient&&html`<div style=${{padding:'10px 14px',borderRadius:10,background:C.gold+'15',border:'1px solid '+C.gold+'30',marginBottom:16,fontSize:14,color:C.gold}}>Client existant : <strong>${foundClient.name}</strong></div>`}
-        ${!foundClient&&phoneClean(clientPhone).length>=6&&html`<div style=${{marginBottom:18}}><label style=${{fontSize:11,letterSpacing:2,textTransform:'uppercase',color:C.creamDark,display:'block',marginBottom:6}}>Nom</label>
-          <input value=${clientName} onInput=${e=>setClientName(e.target.value)} placeholder="Marie Dupont" style=${{...sInput,fontFamily:"'Cormorant Garamond',serif"}}/></div>`}
-        <button onClick=${()=>setScreen('choose')} disabled=${!ok} style=${{...sBtn,background:ok?sBtn.background:C.gold+'30',color:ok?'#1a0a2e':C.creamDark}}>Continuer →</button></div></div>`}
+  // ═══ IDENTIFY → CHOOSE → CREATE (compact) ═══
+  if(sc==='id'){const hp=v=>{setCP(v);const f=fBP(v);setFC(f);if(f)setCN(f.name)};const ok=pClean(cP).length>=6&&cN.trim().length>=2;
+    return html`<div><div style=${{padding:20}}><button onClick=${()=>setSc('home')} style=${{background:'rgba(0,0,0,0.3)',border:'none',color:'#fff',fontSize:13,cursor:'pointer',padding:'7px 14px',borderRadius:8}}>← Retour</button></div>
+    <div style=${{padding:'0 24px',textAlign:'center'}}><div class="cg" style=${{fontSize:24,color:C.gold,fontWeight:600,marginBottom:24}}>Identification client</div>
+      <div style=${{marginBottom:18}}><label style=${{fontSize:11,letterSpacing:2,textTransform:'uppercase',color:C.creamDark,display:'block',marginBottom:6}}>Téléphone</label><input value=${cP} onInput=${e=>hp(e.target.value)} placeholder="06 12 34 56 78" type="tel" autofocus style=${{...inp,letterSpacing:2}}/></div>
+      ${fC&&html`<div style=${{padding:'10px 14px',borderRadius:10,background:C.gold+'15',border:'1px solid '+C.gold+'30',marginBottom:16,fontSize:14,color:C.gold}}>Client : <strong>${fC.name}</strong></div>`}
+      ${!fC&&pClean(cP).length>=6&&html`<div style=${{marginBottom:18}}><label style=${{fontSize:11,letterSpacing:2,textTransform:'uppercase',color:C.creamDark,display:'block',marginBottom:6}}>Nom</label><input value=${cN} onInput=${e=>setCN(e.target.value)} placeholder="Marie Dupont" style=${{...inp,fontFamily:"'Cormorant Garamond',serif"}}/></div>`}
+      <button onClick=${()=>setSc('ch')} disabled=${!ok} style=${{...btn,background:ok?btn.background:C.gold+'30',color:ok?'#1a0a2e':C.creamDark}}>Continuer →</button></div></div>`}
 
-  // ═══ CHOOSE ═══
-  if(screen==='choose'){return html`<div>
-    <div style=${{padding:'20px'}}><button onClick=${()=>setScreen('identify')} style=${{background:'rgba(0,0,0,0.3)',border:'none',color:'#fff',fontSize:13,cursor:'pointer',padding:'6px 14px',borderRadius:8}}>← Retour</button></div>
-    <div style=${{padding:'0 24px',textAlign:'center'}}>
-      <div style=${{fontSize:13,color:C.creamDark,marginBottom:6}}>${clientName} · ${clientPhone}</div>
-      <div style=${{fontFamily:"'Cormorant Garamond',serif",fontSize:24,color:C.gold,fontWeight:600,marginBottom:28}}>Quel support ?</div>
-      <button onClick=${()=>setScreen('create-abo')} style=${{width:'100%',padding:'24px 16px',borderRadius:16,marginBottom:14,background:C.white+'10',border:'2px solid '+C.gold+'50',cursor:'pointer',textAlign:'center',color:C.white}}>
-        <div style=${{fontSize:28,marginBottom:6}}>🪷</div><div style=${{fontFamily:"'Cormorant Garamond',serif",fontSize:20,fontWeight:600,color:C.gold}}>Carte d'abonnement</div></button>
-      <button onClick=${()=>{setCPour(clientName);setScreen('create-cadeau')}} style=${{width:'100%',padding:'24px 16px',borderRadius:16,background:C.white+'10',border:'2px solid '+C.magenta+'50',cursor:'pointer',textAlign:'center',color:C.white}}>
-        <div style=${{fontSize:28,marginBottom:6}}>🎁</div><div style=${{fontFamily:"'Cormorant Garamond',serif",fontSize:20,fontWeight:600,color:C.magenta}}>Chèque cadeau</div></button></div></div>`}
+  if(sc==='ch'){return html`<div><div style=${{padding:20}}><button onClick=${()=>setSc('id')} style=${{background:'rgba(0,0,0,0.3)',border:'none',color:'#fff',fontSize:13,cursor:'pointer',padding:'7px 14px',borderRadius:8}}>← Retour</button></div>
+    <div style=${{padding:'0 24px',textAlign:'center'}}><div style=${{fontSize:13,color:C.creamDark,marginBottom:6}}>${cN} · ${cP}</div><div class="cg" style=${{fontSize:24,color:C.gold,fontWeight:600,marginBottom:28}}>Quel support ?</div>
+      <button onClick=${()=>setSc('mk-abo')} style=${{width:'100%',padding:'24px',borderRadius:16,marginBottom:14,background:C.white+'10',border:'2px solid '+C.gold+'50',cursor:'pointer',color:C.white,textAlign:'center'}}><div style=${{fontSize:28}}>🪷</div><div class="cg" style=${{fontSize:20,fontWeight:600,color:C.gold}}>Carte d'abonnement</div></button>
+      <button onClick=${()=>{setGP(cN);setSc('mk-cad')}} style=${{width:'100%',padding:'24px',borderRadius:16,background:C.white+'10',border:'2px solid '+C.magenta+'50',cursor:'pointer',color:C.white,textAlign:'center'}}><div style=${{fontSize:28}}>🎁</div><div class="cg" style=${{fontSize:20,fontWeight:600,color:C.magenta}}>Chèque cadeau</div></button></div></div>`}
 
-  // ═══ CREATE ABO ═══
-  if(screen==='create-abo'){return html`<div>
-    <div style=${{padding:'20px'}}><button onClick=${()=>setScreen('choose')} style=${{background:'rgba(0,0,0,0.3)',border:'none',color:'#fff',fontSize:13,cursor:'pointer',padding:'6px 14px',borderRadius:8}}>← Retour</button></div>
-    <div style=${{padding:'0 24px',textAlign:'center'}}>
-      <div style=${{fontSize:13,color:C.creamDark,marginBottom:6}}>${clientName}</div>
-      <div style=${{fontFamily:"'Cormorant Garamond',serif",fontSize:24,color:C.gold,fontWeight:600,marginBottom:24}}>Carte d'abonnement</div>
-      <div style=${{display:'flex',gap:12,justifyContent:'center',marginBottom:28}}>
-        ${['1h','1h30'].map(d=>html`<button onClick=${()=>setDur(d)} style=${{flex:1,maxWidth:130,padding:'16px 0',borderRadius:12,border:'2px solid '+C.gold,cursor:'pointer',fontSize:22,fontWeight:600,fontFamily:"'Cormorant Garamond',serif",background:dur===d?C.gold:'transparent',color:dur===d?'#1a0a2e':C.gold}}>${d}</button>`)}</div>
-      <button onClick=${createAbo} style=${sBtn}>Créer la carte</button></div></div>`}
+  if(sc==='mk-abo'){return html`<div><div style=${{padding:20}}><button onClick=${()=>setSc('ch')} style=${{background:'rgba(0,0,0,0.3)',border:'none',color:'#fff',fontSize:13,cursor:'pointer',padding:'7px 14px',borderRadius:8}}>← Retour</button></div>
+    <div style=${{padding:'0 24px',textAlign:'center'}}><div style=${{fontSize:13,color:C.creamDark,marginBottom:6}}>${cN}</div><div class="cg" style=${{fontSize:24,color:C.gold,fontWeight:600,marginBottom:24}}>Carte d'abonnement</div>
+      <div style=${{display:'flex',gap:12,justifyContent:'center',marginBottom:28}}>${['1h','1h30'].map(d=>html`<button onClick=${()=>setDur(d)} style=${{flex:1,maxWidth:130,padding:'16px',borderRadius:12,border:'2px solid '+C.gold,cursor:'pointer',fontSize:22,fontWeight:600,fontFamily:"'Cormorant Garamond',serif",background:dur===d?C.gold:'transparent',color:dur===d?'#1a0a2e':C.gold}}>${d}</button>`)}</div>
+      <button onClick=${mkAbo} style=${btn}>Créer</button></div></div>`}
 
-  // ═══ CREATE CADEAU ═══
-  if(screen==='create-cadeau'){const vd=addMonths(new Date().toISOString(),6);return html`<div>
-    <div style=${{padding:'20px'}}><button onClick=${()=>setScreen('choose')} style=${{background:'rgba(0,0,0,0.3)',border:'none',color:'#fff',fontSize:13,cursor:'pointer',padding:'6px 14px',borderRadius:8}}>← Retour</button></div>
-    <div style=${{padding:'0 24px'}}>
-      <div style=${{textAlign:'center',fontFamily:"'Cormorant Garamond',serif",fontSize:24,color:C.magenta,fontWeight:600,marginBottom:20}}>Chèque cadeau</div>
-      ${[{l:'Pour',v:cPour,s:setCPour,p:'Mme Dupont'},{l:'De la part de',v:cDeLaPart,s:setCDeLaPart,p:'Sa famille…'}].map(f=>html`
-        <div style=${{marginBottom:18}}><label style=${{fontSize:11,letterSpacing:2,textTransform:'uppercase',color:C.creamDark,display:'block',marginBottom:6}}>${f.l}</label>
-          <input value=${f.v} onInput=${e=>f.s(e.target.value)} placeholder=${f.p} style=${{...sInput,fontFamily:"'Cormorant Garamond',serif"}}/></div>`)}
-      <div style=${{marginBottom:18}}><label style=${{fontSize:11,letterSpacing:2,textTransform:'uppercase',color:C.creamDark,display:'block',marginBottom:6}}>Soin offert</label>
-        <select value=${cSoin} onChange=${e=>setCSoin(e.target.value)} style=${{...sInput,border:'2px solid '+C.magenta+'50',fontSize:15,fontFamily:"'Cormorant Garamond',serif",WebkitAppearance:'none'}}>
-          ${SOINS.map(s=>html`<option value=${s} style=${{background:C.mauveDark,color:C.white}}>${s}</option>`)}</select></div>
-      <div style=${{padding:'12px',borderRadius:10,background:C.white+'08',marginBottom:20,textAlign:'center'}}>
-        <span style=${{fontSize:11,letterSpacing:2,textTransform:'uppercase',color:C.creamDark}}>Jusqu'au </span>
-        <span style=${{fontFamily:"'Cormorant Garamond',serif",fontSize:18,fontWeight:600,color:C.gold}}>${fmtDate(vd)}</span></div>
-      <button onClick=${createCadeau} disabled=${!cPour.trim()||!cDeLaPart.trim()}
-        style=${{...sBtn,background:cPour.trim()&&cDeLaPart.trim()?'linear-gradient(135deg,'+C.magenta+','+C.red+')':C.gold+'30',color:cPour.trim()&&cDeLaPart.trim()?C.white:C.creamDark}}>Créer</button></div></div>`}
+  if(sc==='mk-cad'){const vd=addM(new Date().toISOString(),6);return html`<div><div style=${{padding:20}}><button onClick=${()=>setSc('ch')} style=${{background:'rgba(0,0,0,0.3)',border:'none',color:'#fff',fontSize:13,cursor:'pointer',padding:'7px 14px',borderRadius:8}}>← Retour</button></div>
+    <div style=${{padding:'0 24px'}}><div style=${{textAlign:'center'}} class="cg"><div style=${{fontSize:24,color:C.magenta,fontWeight:600,marginBottom:20}}>Chèque cadeau</div></div>
+      ${[{l:'Pour',v:gP,s:setGP,p:'Mme Dupont'},{l:'De la part de',v:gD,s:setGD,p:'Sa famille…'}].map(f=>html`<div style=${{marginBottom:18}}><label style=${{fontSize:11,letterSpacing:2,textTransform:'uppercase',color:C.creamDark,display:'block',marginBottom:6}}>${f.l}</label><input value=${f.v} onInput=${e=>f.s(e.target.value)} placeholder=${f.p} style=${{...inp,fontFamily:"'Cormorant Garamond',serif"}}/></div>`)}
+      <div style=${{marginBottom:18}}><label style=${{fontSize:11,letterSpacing:2,textTransform:'uppercase',color:C.creamDark,display:'block',marginBottom:6}}>Soin</label><select value=${gS} onChange=${e=>setGS(e.target.value)} style=${{...inp,border:'2px solid '+C.magenta+'50',fontSize:15,fontFamily:"'Cormorant Garamond',serif",WebkitAppearance:'none'}}>${SOINS.map(s=>html`<option value=${s} style=${{background:C.mauveDark,color:C.white}}>${s}</option>`)}</select></div>
+      <div style=${{padding:12,borderRadius:10,background:C.white+'08',marginBottom:20,textAlign:'center'}}><span style=${{fontSize:11,letterSpacing:2,textTransform:'uppercase',color:C.creamDark}}>Jusqu'au </span><span class="cg" style=${{fontSize:18,fontWeight:600,color:C.gold}}>${fmtD(vd)}</span></div>
+      <button onClick=${mkCad} disabled=${!gP.trim()||!gD.trim()} style=${{...btn,background:gP.trim()&&gD.trim()?'linear-gradient(135deg,'+C.magenta+','+C.red+')':C.gold+'30',color:gP.trim()&&gD.trim()?C.white:C.creamDark}}>Créer</button></div></div>`}
 
   // ═══════════════════════════════════════
-  // VIEW ABO — image vierge + overlays
+  // CARTE D'ABONNEMENT — design fidèle avec logo + photo Nim
   // ═══════════════════════════════════════
-  if(screen==='view-abo'&&current){const complete=isComplete(current);
-    return html`<div>
-      ${navBar}
-      <div style=${{padding:'0 6px 12px',maxWidth:500,margin:'0 auto'}}>
-        <div ref=${cardRef} style=${{position:'relative',borderRadius:8,overflow:'hidden',boxShadow:'0 4px 20px rgba(0,0,0,0.3)'}}>
-          <img src="bg-abo.jpg" alt="" style=${{width:'100%',display:'block'}} crossorigin="anonymous"/>
-          <!-- Logo overlay -->
-          <img src="logo.png" style=${{position:"absolute",top:"2%",left:"5%",width:"25%",zIndex:2}} crossorigin="anonymous"/>
-          <!-- 5 stamp overlays -->
-          ${[0,1,2,3,4].map(i=>html`<div onClick=${()=>toggleVisit(i)}
-            style=${{position:'absolute',top:'28%',left:(41.5+i*10.2)+'%',width:'8.5%',paddingBottom:'8.5%',
-              borderRadius:'50%',cursor:'pointer',
-              background:current.visits[i]?'rgba(212,175,55,0.75)':'transparent',
-              display:'flex',alignItems:'center',justifyContent:'center'}}>
-            ${current.visits[i]?html`<div style=${{position:'absolute',top:'50%',left:'50%',transform:'translate(-50%,-50%)',color:'#fff',fontSize:'clamp(16px,3vw,28px)',fontWeight:700}}>✓</div>`:''}</div>`)}
-          <!-- Duration dot -->
-          <div style=${{position:'absolute',top:'50.5%',left:current.duration==='1h'?'60.5%':'71.5%',
-            width:'clamp(12px,2.5vw,18px)',height:'clamp(12px,2.5vw,18px)',borderRadius:'50%',background:C.red}}></div>
-          <!-- Name -->
-          <div style=${{position:'absolute',bottom:'2.5%',left:'52%',right:'5%',
-            fontFamily:"'Cormorant Garamond',serif",fontSize:'clamp(14px,3vw,24px)',
-            fontStyle:'italic',fontWeight:600,color:'#4a2866'}}>${current.name}</div>
-          <!-- QR code -->
-          <div style=${{position:'absolute',bottom:'15%',left:'3%'}}><${QR} data=${current.id} size=${65}/></div>
-          <!-- ID -->
-          <div style=${{position:'absolute',bottom:'3%',left:'3%',fontFamily:'monospace',fontSize:'clamp(8px,1.5vw,12px)',color:C.gold+'cc'}}>${current.id}</div>
-          <!-- Complete badge -->
-          ${complete?html`<div style=${{position:'absolute',top:'42%',left:'58%',transform:'rotate(-15deg)',
-            padding:'8px 20px',border:'3px solid '+C.gold,borderRadius:10,background:'rgba(212,175,55,0.92)',
-            fontFamily:"'Cormorant Garamond',serif",fontSize:'clamp(12px,2.5vw,18px)',fontWeight:700,color:'#1a0a2e',
-            whiteSpace:'nowrap',zIndex:5}}>✦ 1 SÉANCE OFFERTE ✦</div>`:''}</div></div>
-      <div style=${{padding:'6px 18px 8px',textAlign:'center',fontSize:12,color:C.creamDark}}>${stampCount(current)}/5 · ${current.duration} · ${current.id}</div>
-      <div style=${{padding:'0 18px 20px',maxWidth:500,margin:'0 auto'}}><button onClick=${shareCard} disabled=${sharing} style=${{...sBtn,background:sharing?C.gold+'50':sBtn.background}}>${sharing?'⏳ Préparation…':'📤 Partager la carte'}</button></div>
-    </div>`}
+  if(sc==='v-abo'&&cur){const co=isCo(cur);
+    return html`<div>${nav}
+    <div style=${{padding:'0 8px 12px',maxWidth:520,margin:'0 auto'}}>
+      <div ref=${cr} style=${{position:'relative',borderRadius:10,overflow:'hidden',boxShadow:'0 4px 20px rgba(0,0,0,0.35)',background:'#B89FCC',aspectRatio:'1200/733'}}>
+        <!-- Waves SVG gauche -->
+        <svg viewBox="0 0 80 500" preserveAspectRatio="none" style=${{position:'absolute',left:0,top:0,bottom:0,width:'7%',height:'100%',zIndex:1}}>
+          <defs><linearGradient id="wg" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#B6007D"/><stop offset="40%" stop-color="#D4AF37"/><stop offset="100%" stop-color="#D4AF37" stop-opacity="0.2"/></linearGradient></defs>
+          <path d="M0,0 C40,60 10,120 30,200 S60,320 20,400 S40,460 0,500 L0,0Z" fill="url(#wg)" opacity="0.7"/>
+          <path d="M0,30 C25,100 5,170 20,260 S45,360 10,440 S25,480 0,500 L0,0Z" fill="url(#wg)" opacity="0.35"/>
+        </svg>
+        <!-- LEFT: Logo + texte -->
+        <div style=${{position:'absolute',left:'2%',top:'5%',width:'34%',height:'90%',display:'flex',flexDirection:'column',alignItems:'center',zIndex:2}}>
+          <img src="logo.png" style=${{width:'65%',marginBottom:'3%'}} crossorigin="anonymous"/>
+          <div style=${{textAlign:'center',marginTop:'auto',fontSize:'clamp(7px,1.4vw,11px)',lineHeight:1.7,color:C.cream}}>
+            <div><span style=${{color:C.gold}}>Adresse</span> · 17 Rue des Bosquets, 54300 Lunéville</div>
+            <div><span style=${{color:C.gold}}>Tél.</span> · 07 61 11 66 65  <span style=${{color:C.gold}}>WhatsApp</span> · 0761116665</div>
+            <div><span style=${{color:C.gold}}>Email</span> · NounimKeoboualpha84@gmail.com</div>
+            <div><span style=${{color:C.gold}}>Ouvert</span> · tous les jours : 10:00 – 20:00</div>
+            <div><span style=${{color:C.gold}}>Facebook</span> · Nim thai bien-etre Luneville</div>
+          </div>
+        </div>
+        <!-- RIGHT: Contenu carte -->
+        <div style=${{position:'absolute',left:'38%',top:'3%',right:'3%',bottom:'3%',display:'flex',flexDirection:'column',alignItems:'center'}}>
+          <!-- Photo Nim + titre -->
+          <div style=${{display:'flex',alignItems:'center',gap:'4%',width:'100%',marginBottom:'3%'}}>
+            <div style=${{width:'22%',aspectRatio:'1',borderRadius:'50%',border:'3px solid '+C.gold,overflow:'hidden',flexShrink:0}}>
+              <img src="nim.jpg" style=${{width:'100%',height:'100%',objectFit:'cover'}} crossorigin="anonymous"/></div>
+            <div><div class="ds" style=${{fontSize:'clamp(14px,3.5vw,28px)',color:C.mauveDark}}>Carte d'abonnement</div>
+              <div style=${{fontSize:'clamp(6px,1.2vw,10px)',letterSpacing:3,color:C.gold,textTransform:'uppercase'}}>Massage thaïlandais · Bien-être</div></div>
+          </div>
+          <!-- 5 cercles -->
+          <div style=${{display:'flex',gap:'3%',justifyContent:'center',width:'100%',marginBottom:'2%'}}>
+            ${cur.visits.map((v,i)=>html`<div onClick=${()=>tV(i)} style=${{width:'14%',aspectRatio:'1',borderRadius:'50%',border:'2.5px solid '+C.goldDark,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',background:v?'rgba(212,175,55,0.3)':'rgba(255,255,255,0.15)',boxShadow:'inset 0 1px 3px rgba(0,0,0,0.08)'}}>
+              <span class="cg" style=${{fontSize:'clamp(10px,2.5vw,20px)',fontWeight:600,color:v?C.gold:C.goldDark+'60'}}>${v?'✓':(i+1)}</span></div>`)}</div>
+          <!-- Durée -->
+          <div style=${{display:'flex',alignItems:'center',gap:'3%',marginBottom:'2%'}}>
+            <span class="cg" style=${{fontSize:'clamp(10px,2vw,16px)',color:C.mauveDark}}>Durée :</span>
+            <div style=${{width:'clamp(14px,2.5vw,20px)',height:'clamp(14px,2.5vw,20px)',borderRadius:'50%',border:'2px solid '+C.mauveDark,background:cur.duration==='1h'?C.red:'transparent'}}></div>
+            <span class="cg" style=${{fontSize:'clamp(10px,2vw,16px)',color:C.mauveDark}}>1 h</span>
+            <div style=${{width:'clamp(14px,2.5vw,20px)',height:'clamp(14px,2.5vw,20px)',borderRadius:'50%',border:'2px solid '+C.mauveDark,background:cur.duration==='1h30'?C.red:'transparent'}}></div>
+            <span class="cg" style=${{fontSize:'clamp(10px,2vw,16px)',color:C.mauveDark}}>1 h 30</span>
+          </div>
+          <!-- Description -->
+          <div style=${{textAlign:'center',marginBottom:'2%'}}>
+            <div class="cg" style=${{fontSize:'clamp(10px,2vw,16px)',fontWeight:600,color:C.mauveDark}}>Massage traditionnel thaïlandais</div>
+            <div class="cg" style=${{fontSize:'clamp(8px,1.5vw,12px)',fontStyle:'italic',color:C.mauveDark+'bb'}}>Libération des tensions · Détente profonde · Soins & bien-être</div></div>
+          <!-- Nom -->
+          <div style=${{background:'rgba(255,248,231,0.25)',borderRadius:6,padding:'2% 4%',width:'100%',marginTop:'auto',display:'flex',alignItems:'center',gap:'2%'}}>
+            <span class="ds" style=${{fontSize:'clamp(10px,2vw,16px)',color:C.mauveDark}}>Nom :</span>
+            <span class="cg" style=${{fontSize:'clamp(12px,2.8vw,22px)',fontWeight:600,color:C.mauveDark,fontStyle:'italic',borderBottom:'1px dashed '+C.gold+'50',flex:1}}>${cur.name}</span></div>
+          <!-- QR + ID -->
+          <div style=${{display:'flex',justifyContent:'space-between',alignItems:'flex-end',width:'100%',marginTop:'2%'}}>
+            <${QR} data=${cur.id} size=${55}/>
+            <div style=${{textAlign:'right'}}><div style=${{fontFamily:'monospace',fontSize:'clamp(7px,1.3vw,11px)',color:C.gold}}>${cur.id}</div><div style=${{fontSize:'clamp(7px,1.2vw,10px)',color:C.creamDark}}>07 61 11 66 65</div></div></div>
+        </div>
+        ${co?html`<div style=${{position:'absolute',top:'40%',left:'55%',transform:'rotate(-15deg)',padding:'1.5% 4%',border:'3px solid '+C.gold,borderRadius:10,background:'rgba(212,175,55,0.92)',fontFamily:"'Cormorant Garamond',serif",fontSize:'clamp(11px,2.5vw,18px)',fontWeight:700,color:'#1a0a2e',whiteSpace:'nowrap',zIndex:5}}>✦ 1 SÉANCE OFFERTE ✦</div>`:''}</div></div>
+    <div style=${{padding:'6px 18px 8px',textAlign:'center',fontSize:12,color:C.creamDark,maxWidth:520,margin:'0 auto'}}>${sC(cur)}/5 · ${cur.duration} · ${cur.id}</div>
+    <div style=${{padding:'0 18px 20px',maxWidth:520,margin:'0 auto'}}><button onClick=${share} disabled=${sh} style=${{...btn,background:sh?C.gold+'50':btn.background}}>${sh?'⏳':'📤 Partager la carte'}</button></div></div>`}
 
   // ═══════════════════════════════════════
-  // VIEW CADEAU — image vierge + overlays
+  // CHÈQUE CADEAU — design fidèle
   // ═══════════════════════════════════════
-  if(screen==='view-cadeau'&&current){const expired=isExpired(current);
-    return html`<div>
-      ${navBar}
-      <div style=${{padding:'0 6px 12px',maxWidth:500,margin:'0 auto'}}>
-        <div ref=${cardRef} style=${{position:'relative',borderRadius:8,overflow:'hidden',boxShadow:'0 4px 20px rgba(0,0,0,0.3)'}}>
-          <img src="bg-cadeau.jpg" alt="" style=${{width:'100%',display:'block'}} crossorigin="anonymous"/>
-          <!-- Logo overlay -->
-          <img src="logo.png" style=${{position:"absolute",top:"2%",left:"5%",width:"25%",zIndex:2}} crossorigin="anonymous"/>
-          <!-- POUR -->
-          <div style=${{position:'absolute',top:'18%',left:'46%',right:'4%',
-            fontFamily:"'Cormorant Garamond',serif",fontSize:'clamp(13px,3.5vw,26px)',
-            fontStyle:'italic',fontWeight:600,color:C.red}}>${current.pour}</div>
-          <!-- DE LA PART DE -->
-          <div style=${{position:'absolute',top:'34%',left:'54%',right:'4%',
-            fontFamily:"'Cormorant Garamond',serif",fontSize:'clamp(13px,3.5vw,26px)',
-            fontStyle:'italic',fontWeight:600,color:C.red}}>${current.deLaPart}</div>
-          <!-- VALEUR -->
-          <div style=${{position:'absolute',top:'49%',left:'42%',right:'3%',
-            fontFamily:"'Cormorant Garamond',serif",fontSize:'clamp(12px,3vw,22px)',
-            fontStyle:'italic',fontWeight:600,color:C.red}}>${current.soin}</div>
-          <!-- JUSQU'AU -->
-          <div style=${{position:'absolute',top:'64%',left:'48%',right:'8%',
-            fontFamily:"'Cormorant Garamond',serif",fontSize:'clamp(13px,3.5vw,26px)',
-            fontStyle:'italic',fontWeight:600,color:C.red}}>${fmtDate(current.validUntil)}</div>
-          <!-- QR -->
-          <div style=${{position:'absolute',bottom:'20%',right:'3%'}}><${QR} data=${current.id} size=${55}/></div>
-          <div style=${{position:'absolute',bottom:'20%',right:'14%',fontFamily:'monospace',fontSize:'clamp(7px,1.2vw,10px)',color:C.goldDark+'cc'}}>${current.id}</div>
-          <!-- SOIN REALISE stamp -->
-          ${current.used?html`<div style=${{position:'absolute',top:'38%',left:'55%',transform:'translate(-50%,-50%) rotate(-12deg)',
-            padding:'10px 20px',border:'4px solid #2E7D32',borderRadius:12,background:'rgba(232,245,233,0.93)',textAlign:'center',zIndex:5}}>
-            <div style=${{fontSize:'clamp(10px,2vw,14px)',letterSpacing:3,textTransform:'uppercase',color:'#2E7D32',fontWeight:700}}>✓ SOIN RÉALISÉ</div>
-            <div style=${{fontFamily:"'Cormorant Garamond',serif",fontSize:'clamp(14px,3vw,22px)',fontWeight:600,color:'#2E7D32'}}>le ${fmtDate(current.usedDate)}</div></div>`:''}</div></div>
-      <div style=${{padding:'0 18px 6px',textAlign:'center',maxWidth:500,margin:'0 auto'}}>
-        ${current.used?html`<div style=${{fontSize:13,color:'#4CAF50',fontWeight:600,marginBottom:8}}>Soin réalisé — repartager ↓</div>`:''}</div>
-      <div style=${{padding:'0 18px 10px',display:'flex',gap:10,maxWidth:500,margin:'0 auto'}}>
-        <button onClick=${shareCard} disabled=${sharing} style=${{...sBtn,flex:1}}>${sharing?'⏳':current.used?'📤 Renvoyer':'📤 Partager'}</button>
-        ${!current.used?html`<button onClick=${toggleUsed} style=${{padding:'14px 18px',borderRadius:12,cursor:'pointer',fontSize:13,fontWeight:600,border:'none',background:C.gold+'25',color:C.gold}}>Valider soin</button>`:''}</div>
-    </div>`}
+  if(sc==='v-cad'&&cur){const ex=isEx(cur);
+    return html`<div>${nav}
+    <div style=${{padding:'0 8px 12px',maxWidth:520,margin:'0 auto'}}>
+      <div ref=${cr} style=${{position:'relative',borderRadius:10,overflow:'hidden',boxShadow:'0 4px 20px rgba(0,0,0,0.35)',background:'#C5AED6',border:'3px solid '+C.gold,aspectRatio:'1200/556'}}>
+        <!-- Bordure intérieure or -->
+        <div style=${{position:'absolute',inset:'2%',border:'1px solid '+C.gold+'60',borderRadius:6,pointerEvents:'none',zIndex:3}}></div>
+        <!-- LEFT: Logo -->
+        <div style=${{position:'absolute',left:'3%',top:'5%',width:'32%',height:'75%',display:'flex',flexDirection:'column',alignItems:'center',zIndex:2}}>
+          <img src="logo.png" style=${{width:'60%',marginBottom:'5%'}} crossorigin="anonymous"/>
+          <div style=${{textAlign:'center',marginTop:'auto'}}>
+            <div class="cg" style=${{fontSize:'clamp(9px,1.8vw,14px)',fontWeight:600,color:C.mauveDark}}>Massage traditionnel thaïlandais</div>
+            <div class="cg" style=${{fontSize:'clamp(7px,1.3vw,11px)',fontStyle:'italic',color:C.mauveDark+'aa',lineHeight:1.6,marginTop:'3%'}}>Libération des tensions musculaires & nerveuses<br/>Détente profonde des tissus<br/>Soins corporels & bien-être</div></div>
+        </div>
+        <!-- RIGHT: Champs -->
+        <div style=${{position:'absolute',left:'36%',top:'3%',right:'4%',bottom:'18%',display:'flex',flexDirection:'column'}}>
+          <div class="ds" style=${{fontSize:'clamp(18px,5vw,38px)',color:C.mauveDark,marginBottom:'2%'}}>Chèque cadeau</div>
+          ${[{l:'POUR',v:cur.pour},{l:'DE LA PART DE',v:cur.deLaPart},{l:'VALEUR',v:cur.soin},{l:"JUSQU'AU",v:fmtD(cur.validUntil)}].map(f=>html`<div style=${{borderBottom:'1px dashed '+C.gold+'50',padding:'1.5% 0',marginBottom:'1%'}}>
+            <span style=${{fontSize:'clamp(7px,1.3vw,11px)',letterSpacing:2,color:C.mauveDark,fontWeight:600}}>${f.l} : </span>
+            <span class="cg" style=${{fontSize:'clamp(11px,2.8vw,22px)',fontWeight:600,color:C.red,fontStyle:'italic'}}>${f.v}</span></div>`)}
+          <div style=${{display:'flex',justifyContent:'space-between',alignItems:'flex-end',marginTop:'auto'}}>
+            <${QR} data=${cur.id} size=${48}/>
+            <div style=${{fontFamily:'monospace',fontSize:'clamp(7px,1.2vw,10px)',color:C.goldDark}}>${cur.id}</div></div>
+        </div>
+        <!-- Bottom bar -->
+        <div style=${{position:'absolute',bottom:0,left:0,right:0,height:'15%',background:C.mauveDark,padding:'1% 3%',display:'flex',justifyContent:'space-between',alignItems:'center',zIndex:2}}>
+          <div style=${{fontSize:'clamp(6px,1.1vw,9px)',lineHeight:1.7,color:C.cream}}>
+            <div><span style=${{color:C.gold}}>Adresse</span> · 17 Rue des Bosquets, 54300 Lunéville</div>
+            <div><span style=${{color:C.gold}}>Email</span> · NounimKeoboualpha84@gmail.com</div>
+            <div><span style=${{color:C.gold}}>Ouvert</span> · tous les jours : 10:00 – 20:00</div></div>
+          <div style=${{textAlign:'right'}}>
+            <div class="cg" style=${{fontSize:'clamp(10px,2.5vw,20px)',fontWeight:600,color:C.gold}}>07 61 11 66 65</div>
+            <div style=${{fontSize:'clamp(6px,1.1vw,9px)',color:C.creamDark}}>WhatsApp · 0761116665</div>
+            <div style=${{fontSize:'clamp(6px,1.1vw,9px)'}}><span style=${{color:C.gold}}>Facebook</span><span style=${{color:C.creamDark}}> · Nim thai bien-etre Luneville</span></div></div>
+        </div>
+        <!-- SOIN REALISE stamp -->
+        ${cur.used?html`<div style=${{position:'absolute',top:'35%',left:'60%',transform:'translate(-50%,-50%) rotate(-12deg)',padding:'2% 4%',border:'4px solid #2E7D32',borderRadius:12,background:'rgba(232,245,233,0.93)',textAlign:'center',zIndex:5}}>
+          <div style=${{fontSize:'clamp(9px,1.8vw,14px)',letterSpacing:3,textTransform:'uppercase',color:'#2E7D32',fontWeight:700}}>✓ SOIN RÉALISÉ</div>
+          <div class="cg" style=${{fontSize:'clamp(14px,3vw,24px)',fontWeight:600,color:'#2E7D32'}}>le ${fmtD(cur.usedDate)}</div></div>`:''}</div></div>
+    <div style=${{padding:'0 18px 6px',textAlign:'center',maxWidth:520,margin:'0 auto'}}>${cur.used?html`<div style=${{fontSize:13,color:'#4CAF50',fontWeight:600,marginBottom:8}}>Soin réalisé — repartager ↓</div>`:''}</div>
+    <div style=${{padding:'0 18px 10px',display:'flex',gap:10,maxWidth:520,margin:'0 auto'}}>
+      <button onClick=${share} disabled=${sh} style=${{...btn,flex:1}}>${sh?'⏳':cur.used?'📤 Renvoyer':'📤 Partager'}</button>
+      ${!cur.used?html`<button onClick=${tU} style=${{padding:'14px 18px',borderRadius:12,cursor:'pointer',fontSize:13,fontWeight:600,border:'none',background:C.gold+'25',color:C.gold}}>Valider soin</button>`:''}</div></div>`}
 
   return html`<div/>`;
 }
