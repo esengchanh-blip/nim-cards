@@ -52,10 +52,7 @@ const SYNC_SECRET='nim2026secret';
 const syncAll=cards=>{if(!SYNC_URL)return;
   const data=JSON.stringify({secret:SYNC_SECRET,cards});
   const url=SYNC_URL+'?action=sync&data='+encodeURIComponent(data);
-  fetch(url).then(r=>r.text()).then(t=>{
-    try{const j=JSON.parse(t);console.log(j.ok?'✅ Sync: '+j.count+' cartes':'❌ Sync: '+t)}
-    catch(e){console.log('Sync réponse:',t.substring(0,200))}
-  }).catch(e=>console.warn('Sync erreur:',e.message))};
+  const img=new Image();img.onload=img.onerror=()=>console.log('✅ Sync envoyé ('+cards.length+' cartes)');img.src=url};
 const cardUrl=id=>'https://esengchanh-blip.github.io/nim-cards/c.html?id='+id;
 // ═══ Message WhatsApp enrichi ═══
 const FRESHA_URL='';// Lien de réservation Fresha — à renseigner quand le profil marketplace sera publié
