@@ -140,14 +140,14 @@ function App(){
           ${cur.visits[i]?html`<div style=${{position:'absolute',top:'50%',left:'50%',transform:'translate(-50%,-50%)',
             color:'#fff',fontSize:'clamp(16px,3.5vw,28px)',fontWeight:700}}>✓</div>`:''}</div>`)}
         <!-- Duration red dot - aligned with checkboxes -->
-        <div style=${{position:'absolute',top:'55%',left:cur.duration==='1h'?'54%':'67%',
+        <div style=${{position:'absolute',top:'55%',left:cur.duration==='1h'?'65%':'77%',
           width:'clamp(14px,2.5vw,20px)',height:'clamp(14px,2.5vw,20px)',borderRadius:'50%',background:C.red}}></div>
         <!-- Name after "Nom :" on the dotted line -->
         <div style=${{position:'absolute',bottom:'5%',left:'55%',right:'6%',
           fontFamily:"'Cormorant Garamond',serif",fontSize:'clamp(14px,3.2vw,26px)',
           fontStyle:'italic',fontWeight:600,color:'#4a2866'}}>${cur.name}</div>
         <!-- QR code - left side above contact info -->
-        <div style=${{position:'absolute',bottom:'35%',left:'4%',display:'flex',alignItems:'center',gap:'2%'}}>
+        <div style=${{position:'absolute',bottom:'32%',left:'4%',display:'flex',alignItems:'center',gap:'2%'}}>
           <${QR} data=${cur.id} size=${50}/>
           <span style=${{fontFamily:'monospace',fontSize:'clamp(7px,1.2vw,10px)',color:C.gold+'cc'}}>${cur.id}</span></div>
         <!-- Complete badge -->
@@ -167,19 +167,19 @@ function App(){
       <div ref=${cr} style=${{position:'relative',borderRadius:6,overflow:'hidden',boxShadow:'0 4px 20px rgba(0,0,0,0.35)'}}>
         <img src="bg-cadeau.jpg" alt="" style=${{width:'100%',display:'block'}} crossorigin="anonymous"/>
         <!-- POUR value -->
-        <div style=${{position:'absolute',top:'17%',left:'35%',right:'4%',
+        <div style=${{position:'absolute',top:'17%',left:'42%',right:'4%',
           fontFamily:"'Cormorant Garamond',serif",fontSize:'clamp(13px,3.2vw,24px)',
           fontStyle:'italic',fontWeight:600,color:C.red}}>${cur.pour}</div>
         <!-- DE LA PART DE value -->
-        <div style=${{position:'absolute',top:'24.5%',left:'44%',right:'4%',
+        <div style=${{position:'absolute',top:'24.5%',left:'51%',right:'4%',
           fontFamily:"'Cormorant Garamond',serif",fontSize:'clamp(13px,3.2vw,24px)',
           fontStyle:'italic',fontWeight:600,color:C.red}}>${cur.deLaPart}</div>
         <!-- VALEUR value -->
-        <div style=${{position:'absolute',top:'32%',left:'34%',right:'3%',
+        <div style=${{position:'absolute',top:'32%',left:'42%',right:'3%',
           fontFamily:"'Cormorant Garamond',serif",fontSize:'clamp(11px,2.8vw,20px)',
           fontStyle:'italic',fontWeight:600,color:C.red}}>${cur.soin}</div>
         <!-- JUSQU'AU value -->
-        <div style=${{position:'absolute',top:'39%',left:'38%',right:'8%',
+        <div style=${{position:'absolute',top:'39%',left:'45%',right:'8%',
           fontFamily:"'Cormorant Garamond',serif",fontSize:'clamp(13px,3.2vw,24px)',
           fontStyle:'italic',fontWeight:600,color:C.red}}>${fmtD(cur.validUntil)}</div>
         <!-- QR code -->
